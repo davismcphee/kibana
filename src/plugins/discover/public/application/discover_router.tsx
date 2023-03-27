@@ -14,10 +14,10 @@ import { EuiErrorBoundary } from '@elastic/eui';
 import { KibanaContextProvider } from '@kbn/kibana-react-plugin/public';
 import { ContextAppRoute } from './context';
 import { SingleDocRoute } from './doc';
-import { DiscoverMainRoute } from './main';
 import { NotFoundRoute } from './not_found';
 import { DiscoverServices } from '../build_services';
 import { ViewAlertRoute } from './view_alert';
+import { DiscoverTabsWrapper } from './main/discover_tabs_wrapper';
 
 export const discoverRouter = (services: DiscoverServices, history: History, isDev: boolean) => (
   <KibanaContextProvider services={services}>
@@ -40,10 +40,10 @@ export const discoverRouter = (services: DiscoverServices, history: History, isD
             <ViewAlertRoute />
           </Route>
           <Route path="/view/:id">
-            <DiscoverMainRoute isDev={isDev} />
+            <DiscoverTabsWrapper isDev={isDev} />
           </Route>
           <Route path="/" exact>
-            <DiscoverMainRoute isDev={isDev} />
+            <DiscoverTabsWrapper isDev={isDev} />
           </Route>
           <NotFoundRoute />
         </Switch>

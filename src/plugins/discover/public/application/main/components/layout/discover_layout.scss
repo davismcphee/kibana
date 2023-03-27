@@ -8,11 +8,15 @@ discover-app {
   overflow-y: hidden;
 }
 
-.dscPage {
+.dscTabsWrapper {
   @include euiBreakpoint('m', 'l', 'xl') {
     @include kibanaFullBodyHeight();
   }
 
+  overflow: hidden;
+}
+
+.dscPage {
   flex-direction: column;
   overflow: hidden;
   padding: 0;
