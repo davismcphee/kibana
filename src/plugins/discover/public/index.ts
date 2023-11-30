@@ -38,4 +38,5 @@ export {
   LogExplorerTabs,
   type LogExplorerTabsParams,
   type LogExplorerTabsProps,
+  type LogExplorerTab,
 } from './components/log_explorer_tabs';

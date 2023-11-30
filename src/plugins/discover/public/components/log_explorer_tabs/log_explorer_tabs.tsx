@@ -10,7 +10,9 @@ import { EuiTab, EuiTabs, useEuiTheme } from '@elastic/eui';
 import type { DataViewSpec } from '@kbn/data-views-plugin/public';
 import { AllDatasetsLocatorParams, ALL_DATASETS_LOCATOR_ID } from '@kbn/deeplinks-observability';
 import { i18n } from '@kbn/i18n';
-import React, { MouseEvent } from 'react';
+import { camelCase } from 'lodash';
+import React, { MouseEvent, useEffect, useMemo } from 'react';
+import useLocalStorage from 'react-use/lib/useLocalStorage';
 import useObservable from 'react-use/lib/useObservable';
 import { map } from 'rxjs';
 import { DiscoverAppLocatorParams, DISCOVER_APP_LOCATOR } from '../../../common';
@@ -22,39 +24,78 @@ export interface LogExplorerTabsParams {
   dataViewSpec?: DataViewSpec;
 }
 
+export type LogExplorerTab = 'discover' | 'log-explorer';
+
 export interface LogExplorerTabsProps {
   services: Pick<DiscoverServices, 'share' | 'data'>;
   params: LogExplorerTabsParams;
-  selectedTab: 'discover' | 'log-explorer';
+  selectedTab: LogExplorerTab;
 }
 
 export const LogExplorerTabs = ({ services, params, selectedTab }: LogExplorerTabsProps) => {
   const { euiTheme } = useEuiTheme();
   const { share, data } = services;
   const locators = share?.url.locators;
+  const discoverLocator = locators?.get<DiscoverAppLocatorParams>(DISCOVER_APP_LOCATOR);
+  const logExplorerLocator = locators?.get<AllDatasetsLocatorParams>(ALL_DATASETS_LOCATOR_ID);
+
   const {
     time: timeRange,
     refreshInterval,
     query,
     filters,
   } = useObservable(data.query.state$.pipe(map(({ state }) => state)), data.query.getState());
-  const mergedParams = { ...params, timeRange, refreshInterval, query, filters };
-  const discoverLocator = locators?.get<DiscoverAppLocatorParams>(DISCOVER_APP_LOCATOR);
-  const logExplorerLocator = locators?.get<AllDatasetsLocatorParams>(ALL_DATASETS_LOCATOR_ID);
-  const discoverUrl = discoverLocator?.getRedirectUrl(mergedParams);
-  const logExplorerUrl = logExplorerLocator?.getRedirectUrl(mergedParams);
 
-  const navigateToDiscover = createNavigateHandler(() => {
-    if (selectedTab !== 'discover') {
-      discoverLocator?.navigate(mergedParams);
-    }
-  });
+  const mergedParams = useMemo(
+    () => ({ ...params, timeRange, refreshInterval, query, filters }),
+    [filters, params, query, refreshInterval, timeRange]
+  );
 
-  const navigateToLogExplorer = createNavigateHandler(() => {
-    if (selectedTab !== 'log-explorer') {
-      logExplorerLocator?.navigate(mergedParams);
+  const [discoverTabState, setDiscoverTabState] = useLocalStorage<typeof mergedParams>(
+    getTabStateKey('discover')
+  );
+
+  const discoverUrl = useMemo(
+    () => discoverLocator?.getRedirectUrl(discoverTabState ?? {}),
+    [discoverLocator, discoverTabState]
+  );
+
+  const navigateToDiscover = useMemo(
+    () =>
+      createNavigateHandler(() => {
+        if (selectedTab !== 'discover') {
+          discoverLocator?.navigate(discoverTabState ?? {});
+        }
+      }),
+    [discoverLocator, discoverTabState, selectedTab]
+  );
+
+  const [logExplorerTabState, setLogExplorerTabState] = useLocalStorage<typeof mergedParams>(
+    getTabStateKey('log-explorer')
+  );
+
+  const logExplorerUrl = useMemo(
+    () => logExplorerLocator?.getRedirectUrl(logExplorerTabState ?? {}),
+    [logExplorerLocator, logExplorerTabState]
+  );
+
+  const navigateToLogExplorer = useMemo(
+    () =>
+      createNavigateHandler(() => {
+        if (selectedTab !== 'log-explorer') {
+          logExplorerLocator?.navigate(logExplorerTabState ?? {});
+        }
+      }),
+    [logExplorerLocator, logExplorerTabState, selectedTab]
+  );
+
+  useEffect(() => {
+    if (selectedTab === 'discover') {
+      setDiscoverTabState(mergedParams);
+    } else {
+      setLogExplorerTabState(mergedParams);
     }
-  });
+  }, [mergedParams, selectedTab, setDiscoverTabState, setLogExplorerTabState]);
 
   return (
     <EuiTabs bottomBorder={false} data-test-subj="logExplorerTabs">
@@ -86,6 +127,8 @@ export const LogExplorerTabs = ({ services, params, selectedTab }: LogExplorerTa
 
 // eslint-disable-next-line import/no-default-export
 export default LogExplorerTabs;
+
+const getTabStateKey = (tab: LogExplorerTab) => `discover:logExplorerTabs.${camelCase(tab)}.state`;
 
 const isModifiedEvent = (event: MouseEvent) =>
   event.metaKey || event.altKey || event.ctrlKey || event.shiftKey;
