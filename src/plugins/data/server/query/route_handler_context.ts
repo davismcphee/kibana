@@ -51,6 +51,8 @@ function extractReferences({
   query,
   filters = [],
   timefilter,
+  appName,
+  tags,
 }: SavedQueryAttributes) {
   const { state: extractedFilters, references } = extract(filters);
   const isOfQueryTypeQuery = isOfQueryType(query);
@@ -64,6 +66,8 @@ function extractReferences({
   }
 
   const attributes: InternalSavedQueryAttributes = {
+    appName,
+    tags,
     title: title.trim(),
     titleKeyword: title.trim(),
     description: description.trim(),

@@ -49,6 +49,8 @@ export const querySavedObjectType: SavedObjectsType = {
           type: 'mappings_addition',
           addedMappings: {
             titleKeyword: { type: 'keyword' },
+            appName: { type: 'keyword' },
+            tags: { type: 'keyword' },
           },
         },
         {
@@ -71,6 +73,8 @@ export const querySavedObjectType: SavedObjectsType = {
     properties: {
       title: { type: 'text' },
       titleKeyword: { type: 'keyword' },
+      appName: { type: 'keyword' },
+      tags: { type: 'keyword' },
       description: { type: 'text' },
     },
   },
