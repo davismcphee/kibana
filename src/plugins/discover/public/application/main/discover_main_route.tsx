@@ -72,6 +72,7 @@ export function DiscoverMainRoute({
     getScopedHistory,
   } = services;
   const { id: savedSearchId } = useParams<DiscoverLandingParams>();
+  const resolvedDataSource = resolve();
   const [stateContainer, { reset: resetStateContainer }] = useDiscoverStateContainer({
     history,
     services,
