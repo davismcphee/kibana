@@ -38,6 +38,7 @@ import type { DocLinksStart, IUiSettingsClient } from '@kbn/core/public';
 import { DataView, DataViewsContract } from '@kbn/data-views-plugin/public';
 import { css } from '@emotion/react';
 import { getIndexPatternFromFilter, getDisplayValueFromFilter } from '@kbn/data-plugin/public';
+import { compressToBase64 } from 'lz-string';
 import { FilterEditor } from '../filter_editor/filter_editor';
 import { FilterView } from '../filter_view';
 import { FilterPanelOption } from '../../types';
@@ -192,6 +193,14 @@ function FilterItemComponent(props: FilterItemProps) {
     );
   }
 
+  const [copyPermission, setCopyPermission] = useState<PermissionState>();
+
+  useEffect(() => {
+    navigator.permissions.query({ name: 'clipboard-write' as PermissionName }).then((result) => {
+      setCopyPermission(result.state);
+    });
+  }, []);
+
   function getPanels() {
     const { negate, disabled } = filter.meta;
     let mainPanelItems = [
@@ -256,6 +265,23 @@ function FilterItemComponent(props: FilterItemProps) {
           onToggleDisabled();
         },
         'data-test-subj': 'disableFilter',
+      },
+      {
+        name: props.intl.formatMessage({
+          id: 'unifiedSearch.filter.filterBar.copyFilterButtonLabel',
+          defaultMessage: 'Copy filter',
+        }),
+        icon: 'copyClipboard',
+        disabled: copyPermission === 'denied',
+        toolTipContent:
+          copyPermission === 'denied' ? 'Clipboard access has been denied' : undefined,
+        onClick: () => {
+          setIsPopoverOpen(false);
+          void navigator.clipboard.writeText(
+            compressToBase64(JSON.stringify({ kibanaFilterVersion: 1, filter }))
+          );
+        },
+        'data-test-subj': 'copyFilter',
       },
       {
         name: props.intl.formatMessage({

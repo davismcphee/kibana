@@ -186,6 +186,7 @@ function QueryBarMenuComponent({
     nonKqlMode,
     disableQueryLanguageSwitcher,
     queryBarMenuRef,
+    openQueryBarMenu,
     closePopover: plainClosePopover,
     onQueryBarSubmit,
     onFiltersUpdated,

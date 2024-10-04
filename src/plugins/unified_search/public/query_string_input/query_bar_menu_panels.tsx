@@ -7,7 +7,7 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-import React, { useState, useRef, useEffect, RefObject } from 'react';
+import React, { useState, useRef, useEffect, RefObject, useCallback } from 'react';
 import { isEqual } from 'lodash';
 import {
   EuiContextMenuPanelDescriptor,
@@ -40,6 +40,7 @@ import {
 import type { SavedQueryService, SavedQuery, SavedQueryTimeFilter } from '@kbn/data-plugin/public';
 import { euiThemeVars } from '@kbn/ui-theme';
 import { EuiContextMenuClass } from '@elastic/eui/src/components/context_menu/context_menu';
+import { decompressFromBase64 } from 'lz-string';
 import type { IUnifiedSearchPluginServices } from '../types';
 import { fromUser } from './from_user';
 import { QueryLanguageSwitcher } from './language_switcher';
@@ -181,6 +182,7 @@ export interface QueryBarMenuPanelsProps {
   nonKqlMode?: 'lucene' | 'text';
   disableQueryLanguageSwitcher?: boolean;
   queryBarMenuRef: RefObject<EuiContextMenuClass>;
+  openQueryBarMenu: boolean;
   closePopover: () => void;
   onQueryBarSubmit: (payload: { dateRange: TimeRange; query?: Query }) => void;
   onFiltersUpdated?: (filters: Filter[]) => void;
@@ -209,6 +211,7 @@ export function useQueryBarMenuPanels({
   nonKqlMode,
   disableQueryLanguageSwitcher = false,
   queryBarMenuRef,
+  openQueryBarMenu,
   closePopover,
   onQueryBarSubmit,
   onFiltersUpdated,
@@ -360,12 +363,77 @@ export function useQueryBarMenuPanels({
   const luceneLabel = strings.getLuceneLanguageName();
   const kqlLabel = strings.getKqlLanguageName();
 
+  const [pastePermission, setPastePermission] = useState<PermissionState>();
+  const [filterToPaste, setFilterToPaste] = useState<Filter>();
+
+  const getFilterToPaste = useCallback(async () => {
+    navigator.clipboard
+      .readText()
+      .then((text) => {
+        setPastePermission('granted');
+
+        try {
+          const context = JSON.parse(decompressFromBase64(text));
+
+          if (
+            'kibanaFilterVersion' in context &&
+            context.kibanaFilterVersion === 1 &&
+            'filter' in context
+          ) {
+            setFilterToPaste(context.filter);
+          }
+        } catch {
+          // ignore
+        }
+      })
+      .catch((e) => {
+        setPastePermission('denied');
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!openQueryBarMenu) {
+      setPastePermission(undefined);
+      setFilterToPaste(undefined);
+      return;
+    }
+
+    navigator.permissions.query({ name: 'clipboard-read' as PermissionName }).then((result) => {
+      if (result.state === 'granted') {
+        getFilterToPaste();
+      } else {
+        setPastePermission(result.state);
+      }
+    });
+  }, [getFilterToPaste, openQueryBarMenu]);
+
   const filtersRelatedPanels: EuiContextMenuPanelItemDescriptor[] = [
     {
       name: strings.getOptionsAddFilterButtonLabel(),
       icon: 'plus',
       onClick: () => {
         setRenderedComponent('addFilter');
+      },
+    },
+    {
+      name: pastePermission === 'prompt' ? 'Enable pasting' : 'Paste filter',
+      icon: 'copyClipboard',
+      disabled: pastePermission !== 'prompt' && !filterToPaste,
+      toolTipContent:
+        pastePermission === 'denied'
+          ? 'Clipboard access has been denied'
+          : pastePermission === 'prompt'
+          ? 'Click to enable filter pasting'
+          : filterToPaste
+          ? undefined
+          : 'No filter to paste',
+      onClick: () => {
+        if (pastePermission === 'prompt') {
+          getFilterToPaste();
+        } else if (filterToPaste) {
+          closePopover();
+          onFiltersUpdated?.([...(filters ?? []), filterToPaste]);
+        }
       },
     },
     {
