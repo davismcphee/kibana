@@ -51,6 +51,8 @@ import type { ThemeServiceStart } from '@kbn/react-kibana-context-common';
 import { type DataPublicPluginStart } from '@kbn/data-plugin/public';
 import type { DocViewFilterFn } from '@kbn/unified-doc-viewer/types';
 import { AdditionalFieldGroups } from '@kbn/unified-field-list';
+import useUpdateEffect from 'react-use/lib/useUpdateEffect';
+import useLatest from 'react-use/lib/useLatest';
 import { DATA_GRID_DENSITY_STYLE_MAP, useDataGridDensity } from '../hooks/use_data_grid_density';
 import {
   UnifiedDataTableSettings,
@@ -503,8 +505,8 @@ export const UnifiedDataTable = ({
   getRowIndicator,
   dataGridDensityState,
   onUpdateDataGridDensity,
-  onChangePage: onChangePageProp,
-  pageIndex = 0,
+  onChangePage: onUpdatePageIndex,
+  pageIndex: pageIndexState = 0,
 }: UnifiedDataTableProps) => {
   const { fieldFormats, toastNotifications, dataViewFieldEditor, uiSettings, storage, data } =
     services;
@@ -530,8 +532,6 @@ export const UnifiedDataTable = ({
     replaceSelectedDocs,
     docIdsInSelectionOrder,
   } = selectedDocsState;
-
-  const [currentPageIndex, setCurrentPageIndex] = useState(pageIndex);
 
   useEffect(() => {
     if (!hasSelectedDocs && isFilterActive) {
@@ -610,26 +610,43 @@ export const UnifiedDataTable = ({
     typeof rowsPerPageState === 'number' && rowsPerPageState > 0
       ? rowsPerPageState
       : DEFAULT_ROWS_PER_PAGE;
-
   const rowCount = useMemo(() => (displayedRows ? displayedRows.length : 0), [displayedRows]);
   const pageCount = useMemo(
     () => Math.ceil(rowCount / currentPageSize),
     [rowCount, currentPageSize]
   );
-
-  useEffect(() => {
-    // calculates and updates actual page index
-    const calculatedPageIndex = currentPageIndex > pageCount - 1 ? 0 : currentPageIndex;
-
-    if (calculatedPageIndex !== currentPageIndex) {
-      setCurrentPageIndex(calculatedPageIndex);
-    }
-  }, [currentPageIndex, pageCount, onChangePageProp]);
+  const stablePageIndexState = useLatest(pageIndexState);
+  const stableOnUpdatePageIndex = useLatest(onUpdatePageIndex);
+  const calculatePageIndex = useLatest((pageIndex: number) =>
+    pageIndex > pageCount - 1 ? 0 : pageIndex
+  );
+  const [currentPageIndex, setCurrentPageIndex] = useState(
+    calculatePageIndex.current(pageIndexState)
+  );
 
   useEffect(() => {
     // communicates the actual page index to the consumer
-    onChangePageProp?.(currentPageIndex);
-  }, [currentPageIndex, onChangePageProp]);
+    if (currentPageIndex !== stablePageIndexState.current) {
+      stableOnUpdatePageIndex.current?.(currentPageIndex);
+    }
+  }, [currentPageIndex, stableOnUpdatePageIndex, stablePageIndexState]);
+
+  useUpdateEffect(() => {
+    // syncs the current page index when the provided page index changes
+    setCurrentPageIndex((previousPageIndex) => {
+      return previousPageIndex === pageIndexState
+        ? previousPageIndex
+        : calculatePageIndex.current(pageIndexState);
+    });
+  }, [calculatePageIndex, pageIndexState]);
+
+  useUpdateEffect(() => {
+    // syncs the current page index when the page count changes
+    setCurrentPageIndex((previousPageIndex) => {
+      const calculatedPageIndex = calculatePageIndex.current(previousPageIndex);
+      return previousPageIndex === calculatedPageIndex ? previousPageIndex : calculatedPageIndex;
+    });
+  }, [calculatePageIndex, pageCount]);
 
   const paginationObj = useMemo(() => {
     const onChangeItemsPerPage = (pageSize: number) => {
@@ -637,7 +654,7 @@ export const UnifiedDataTable = ({
     };
 
     const onChangePage = (newPageIndex: number) => {
-      setCurrentPageIndex(newPageIndex);
+      setCurrentPageIndex(calculatePageIndex.current(newPageIndex));
     };
 
     return isPaginationEnabled
@@ -650,11 +667,12 @@ export const UnifiedDataTable = ({
         }
       : undefined;
   }, [
-    isPaginationEnabled,
-    rowsPerPageOptions,
-    onUpdateRowsPerPage,
-    currentPageSize,
+    calculatePageIndex,
     currentPageIndex,
+    currentPageSize,
+    isPaginationEnabled,
+    onUpdateRowsPerPage,
+    rowsPerPageOptions,
   ]);
 
   const unifiedDataTableContextValue = useMemo<DataTableContext>(

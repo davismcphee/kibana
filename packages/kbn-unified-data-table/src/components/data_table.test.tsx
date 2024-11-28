@@ -1429,7 +1429,9 @@ describe('UnifiedDataTable', () => {
        * */
       const component = await getComponent({
         ...getProps(),
-        onChangePage: onChangePageMock,
+        onChangePage: onChangePageMock.mockImplementation((pageIndex) => {
+          component.setProps({ pageIndex });
+        }),
         rowsPerPageState: 1,
         rowsPerPageOptions: [1, 4],
       });
