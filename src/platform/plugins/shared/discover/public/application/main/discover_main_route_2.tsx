@@ -54,6 +54,7 @@ import {
   APP_STATE_URL_KEY,
   AppStateUrl,
   DiscoverAppState,
+  getInitialState,
 } from './state_management/discover_app_state_container';
 import { cleanupUrlState } from './state_management/utils/cleanup_url_state';
 import { setBreadcrumbs } from '../../utils/breadcrumbs';
@@ -211,18 +212,17 @@ const DiscoverSessionView = ({
     () => getScopedHistory<MainHistoryLocationState>()?.location.state
   );
   const { initializeProfileDataViews } = useDefaultAdHocDataViews2({ rootProfileState });
-  const initialize = useLatest<InitializeSession>(async (initialState = {}) => {
+  const initialize = useLatest<InitializeSession>(async (initialUrlState = {}) => {
     const discoverSessionLoadTracker = ebtManager.trackPerformanceEvent('discoverLoadSavedSearch');
     const urlState = cleanupUrlState(
-      urlStateStorage.get<AppStateUrl>(APP_STATE_URL_KEY) ?? initialState,
+      urlStateStorage.get<AppStateUrl>(APP_STATE_URL_KEY) ?? initialUrlState,
       uiSettings
     );
     const discoverSession = discoverSessionId
       ? await savedSearch.get(discoverSessionId)
       : undefined;
-    const discoverSessionQuery = discoverSession?.searchSource.getField('query');
-    const isEsqlMode =
-      isEsqlSource(urlState.dataSource) || isOfAggregateQueryType(discoverSessionQuery);
+    const initialState = getInitialState(urlState, discoverSession, services);
+    const isEsqlMode = isOfAggregateQueryType(initialState.query);
     const discoverSessionDataView = discoverSession?.searchSource.getField('index');
     const discoverSessionHasAdHocDataView = Boolean(
       discoverSessionDataView && !discoverSessionDataView.isPersisted()
@@ -256,6 +256,38 @@ const DiscoverSessionView = ({
     }
 
     dispatch(internalStateActions.setDefaultProfileAdHocDataViews(profileDataViews));
+
+    if (discoverSession?.timeRestore && discoverSessionDataView?.isTimeBased()) {
+      const { timeRange, refreshInterval } = discoverSession;
+
+      if (timeRange && isTimeRangeValid(timeRange)) {
+        services.timefilter.setTime(timeRange);
+      }
+
+      if (refreshInterval && isRefreshIntervalValid(refreshInterval)) {
+        services.timefilter.setRefreshInterval(refreshInterval);
+      }
+    }
+
+    let dataView: DataView;
+
+    if (isEsqlMode) {
+      return await getEsqlDataView(initialState.query, dataView, services);
+    }
+
+    const result = await loadAndResolveDataView({
+      dataViewId,
+      dataViewSpec,
+      savedSearch,
+      isEsqlMode: isEsqlQuery,
+      services,
+      internalState,
+      runtimeStateManager,
+    });
+
+    return result.dataView;
+
+    await initializeDiscoverSession({ urlState, discoverSession, services });
     discoverSessionLoadTracker.reportEvent();
 
     return { showNoDataPage: false };
@@ -428,27 +460,15 @@ const BrandedLoadingIndicator = () => {
 };
 
 const initializeDiscoverSession = async ({
-  urlState: originalUrlState,
+  urlState,
   discoverSession,
-  currentDataView,
   services,
 }: {
   urlState: DiscoverAppState;
   discoverSession: SavedSearch | undefined;
-  currentDataView: DataView | undefined;
   services: DiscoverServices;
 }) => {
-  const currentState = { dataSource: createEsqlDataSource() };
-  const urlState = cloneDeep(originalUrlState);
-
-  if (
-    isEsqlSource(currentState.dataSource) &&
-    currentDataView?.type === ESQL_TYPE &&
-    !discoverSession &&
-    !urlState.query
-  ) {
-    urlState.query = { esql: getInitialESQLQuery(currentDataView) };
-  }
+  const initialState = getInitialState(urlState, discoverSession, services);
 
   if (discoverSession) {
     const isTimeBased = discoverSession.searchSource.getField('index')?.isTimeBased();
@@ -479,6 +499,8 @@ const initializeDiscoverSession = async ({
       })
     );
   }
+
+  let dataView: DataView;
 };
 
 interface LoadSavedSearchDeps {
