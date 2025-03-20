@@ -23,6 +23,7 @@ import {
 import type { RootProfileState } from '../../context_awareness';
 import { useRootProfile, useDefaultAdHocDataViews } from '../../context_awareness';
 import { DiscoverError } from '../../components/common/error_alert';
+import type { DiscoverSessionViewProps } from './components/session_view';
 import {
   BrandedLoadingIndicator,
   DiscoverSessionView,
@@ -30,6 +31,10 @@ import {
 } from './components/session_view';
 import { useAsyncFunction } from './hooks/use_async_function';
 import type { MainRouteInitializationState } from './types';
+import { TabsView } from './components/tabs_view';
+
+// TEMPORARY: This is a temporary flag to enable/disable tabs in Discover until the feature is fully implemented.
+const TABS_ENABLED = false;
 
 export interface MainRouteProps {
   customizationContext: DiscoverCustomizationContext;
@@ -117,17 +122,23 @@ export const DiscoverMainRoute = ({
     );
   }
 
+  const sessionViewProps: DiscoverSessionViewProps = {
+    mainRouteInitializationState: mainRouteInitializationState.value,
+    customizationContext,
+    customizationCallbacks,
+    urlStateStorage,
+    internalState,
+    runtimeStateManager,
+  };
+
   return (
     <InternalStateProvider store={internalState}>
       <rootProfileState.AppWrapper>
-        <DiscoverSessionView
-          mainRouteInitializationState={mainRouteInitializationState.value}
-          customizationContext={customizationContext}
-          customizationCallbacks={customizationCallbacks}
-          urlStateStorage={urlStateStorage}
-          internalState={internalState}
-          runtimeStateManager={runtimeStateManager}
-        />
+        {TABS_ENABLED ? (
+          <TabsView sessionViewProps={sessionViewProps} />
+        ) : (
+          <DiscoverSessionView {...sessionViewProps} />
+        )}
       </rootProfileState.AppWrapper>
     </InternalStateProvider>
   );
