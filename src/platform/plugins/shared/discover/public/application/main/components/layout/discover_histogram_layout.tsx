@@ -15,7 +15,7 @@ import { useDiscoverHistogram } from './use_discover_histogram';
 import { type DiscoverMainContentProps, DiscoverMainContent } from './discover_main_content';
 import { useAppStateSelector } from '../../state_management/discover_app_state_container';
 import { useIsEsqlMode } from '../../hooks/use_is_esql_mode';
-import { TABS_ENABLED } from '../../discover_main_route';
+import { TABS_ENABLED } from '../../../../constants';
 
 export interface DiscoverHistogramLayoutProps extends DiscoverMainContentProps {
   container: HTMLElement | null;

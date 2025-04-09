@@ -42,7 +42,7 @@ import {
   RuntimeStateProvider,
   internalStateActions,
 } from '../../state_management/redux';
-import { TABS_ENABLED } from '../../discover_main_route';
+import { TABS_ENABLED } from '../../../../constants';
 
 function getStateContainer(savedSearch?: SavedSearch) {
   const stateContainer = getDiscoverStateMock({ isTimeBased: true, savedSearch });
