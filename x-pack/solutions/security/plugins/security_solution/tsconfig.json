@@ -248,5 +248,6 @@
     "@kbn/inference-endpoint-ui-common",
     "@kbn/actions-types",
     "@kbn/triggers-actions-ui-types",
+    "@kbn/unified-histogram",
   ]
 }
