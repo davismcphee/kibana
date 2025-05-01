@@ -9,7 +9,7 @@
 import { EuiAccordion, EuiHorizontalRule, EuiTitle, useGeneratedHtmlId } from '@elastic/eui';
 import { DataTableRecord } from '@kbn/discover-utils';
 import { i18n } from '@kbn/i18n';
-import React from 'react';
+import React, { forwardRef } from 'react';
 import type { DataView } from '@kbn/data-views-plugin/public';
 import { StacktraceContent } from './sub_components/stacktrace/stacktrace_content';
 
@@ -20,21 +20,20 @@ const stacktraceAccordionTitle = i18n.translate(
   }
 );
 
-export function LogsOverviewStacktraceSection({
-  hit,
-  dataView,
-  isExpanded,
-}: {
-  hit: DataTableRecord;
-  dataView: DataView;
-  isExpanded: boolean;
-}) {
+export const LogsOverviewStacktraceSection = forwardRef<
+  HTMLDivElement,
+  {
+    hit: DataTableRecord;
+    dataView: DataView;
+    isExpanded: boolean;
+  }
+>(({ hit, dataView, isExpanded }, ref) => {
   const accordionId = useGeneratedHtmlId({
     prefix: stacktraceAccordionTitle,
   });
 
   return (
-    <>
+    <div ref={ref}>
       <EuiAccordion
         id={accordionId}
         buttonContent={
@@ -49,6 +48,6 @@ export function LogsOverviewStacktraceSection({
         <StacktraceContent hit={hit} dataView={dataView} />
       </EuiAccordion>
       <EuiHorizontalRule margin="xs" />
-    </>
+    </div>
   );
-}
+});

@@ -7,7 +7,7 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { forwardRef, useMemo, useState } from 'react';
 import { DataTableRecord } from '@kbn/discover-utils';
 import {
   EuiAccordion,
@@ -108,13 +108,10 @@ export const datasetQualityLinkTitle = i18n.translate(
   }
 );
 
-export const LogsOverviewDegradedFields = ({
-  rawDoc,
-  isExpanded,
-}: {
-  rawDoc: DataTableRecord['raw'];
-  isExpanded: boolean;
-}) => {
+export const LogsOverviewDegradedFields = forwardRef<
+  HTMLDivElement,
+  { rawDoc: DataTableRecord['raw']; isExpanded: boolean }
+>(({ rawDoc, isExpanded }, ref) => {
   const { ignored_field_values: ignoredFieldValues = {}, fields: sourceFields = {} } = rawDoc;
   const countOfDegradedFields = Object.keys(ignoredFieldValues)?.length;
 
@@ -192,7 +189,7 @@ export const LogsOverviewDegradedFields = ({
   );
 
   return countOfDegradedFields > 0 ? (
-    <>
+    <div ref={ref}>
       <EuiAccordion
         id={accordionId}
         buttonContent={accordionTitle}
@@ -212,9 +209,9 @@ export const LogsOverviewDegradedFields = ({
         />
       </EuiAccordion>
       <EuiHorizontalRule margin="xs" />
-    </>
+    </div>
   ) : null;
-};
+});
 
 const getDegradedFieldsColumns = (): Array<EuiBasicTableColumn<DegradedField>> => [
   {

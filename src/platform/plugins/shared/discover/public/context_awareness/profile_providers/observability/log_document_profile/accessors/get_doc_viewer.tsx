@@ -7,9 +7,12 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { i18n } from '@kbn/i18n';
-import { UnifiedDocViewerLogsOverview } from '@kbn/unified-doc-viewer-plugin/public';
+import {
+  UnifiedDocViewerLogsOverview,
+  type UnifiedDocViewerLogsOverviewApi,
+} from '@kbn/unified-doc-viewer-plugin/public';
 import useObservable from 'react-use/lib/useObservable';
 import useUnmount from 'react-use/lib/useUnmount';
 import { isEqual } from 'lodash';
@@ -38,10 +41,17 @@ export const createGetDocViewer =
           }),
           order: 0,
           component: function LogOverviewTab(props) {
+            const logsOverviewApi = useRef<UnifiedDocViewerLogsOverviewApi | null>(null);
             const overviewContext = useObservable(
               context.logOverviewContext$,
               context.logOverviewContext$.getValue()
             );
+
+            useEffect(() => {
+              if (overviewContext?.initialAccordionSection) {
+                logsOverviewApi.current?.scrollToSection(overviewContext.initialAccordionSection);
+              }
+            }, [overviewContext]);
 
             useUnmount(() => {
               const currentOverviewContext = context.logOverviewContext$.getValue();
@@ -60,6 +70,12 @@ export const createGetDocViewer =
             return (
               <UnifiedDocViewerLogsOverview
                 {...props}
+                ref={(api) => {
+                  if (api && overviewContext?.initialAccordionSection) {
+                    api.scrollToSection(overviewContext.initialAccordionSection);
+                  }
+                  logsOverviewApi.current = api;
+                }}
                 docViewerAccordionState={accordionState}
                 renderAIAssistant={logsAIAssistantFeature?.render}
                 renderStreamsField={streamsFeature?.renderStreamsField}

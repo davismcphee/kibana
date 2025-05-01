@@ -7,7 +7,7 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-import React from 'react';
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { DocViewRenderProps } from '@kbn/unified-doc-viewer/types';
 import { getLogDocumentOverview } from '@kbn/discover-utils';
 import { EuiHorizontalRule, EuiSpacer } from '@elastic/eui';
@@ -27,49 +27,84 @@ export type LogsOverviewProps = DocViewRenderProps & {
   renderStreamsField?: (deps: StreamsFeatureRenderDeps) => JSX.Element;
 };
 
-export function LogsOverview({
-  columns,
-  dataView,
-  hit,
-  filter,
-  onAddColumn,
-  onRemoveColumn,
-  renderAIAssistant,
-  docViewerAccordionState,
-  renderStreamsField,
-}: LogsOverviewProps) {
-  const { fieldFormats } = getUnifiedDocViewerServices();
-  const parsedDoc = getLogDocumentOverview(hit, { dataView, fieldFormats });
-  const LogsOverviewAIAssistant = renderAIAssistant;
-  const stacktraceFields = getStacktraceFields(hit as LogDocument);
-  const isStacktraceAvailable = Object.values(stacktraceFields).some(Boolean);
-  const isStacktraceSectionExpanded = docViewerAccordionState?.stacktrace ?? false;
-  const isQualityIssuesSectionExpanded = docViewerAccordionState?.quality_issues ?? false;
-
-  return (
-    <FieldActionsProvider
-      columns={columns}
-      filter={filter}
-      onAddColumn={onAddColumn}
-      onRemoveColumn={onRemoveColumn}
-    >
-      <EuiSpacer size="m" />
-      <LogsOverviewHeader doc={parsedDoc} />
-      <EuiHorizontalRule margin="xs" />
-      <LogsOverviewHighlights
-        formattedDoc={parsedDoc}
-        doc={hit}
-        renderStreamsField={renderStreamsField}
-      />
-      <LogsOverviewDegradedFields rawDoc={hit.raw} isExpanded={isQualityIssuesSectionExpanded} />
-      {isStacktraceAvailable && (
-        <LogsOverviewStacktraceSection
-          hit={hit}
-          dataView={dataView}
-          isExpanded={isStacktraceSectionExpanded}
-        />
-      )}
-      {LogsOverviewAIAssistant && <LogsOverviewAIAssistant doc={hit} />}
-    </FieldActionsProvider>
-  );
+export interface LogsOverviewApi {
+  scrollToSection: (section: 'stacktrace' | 'quality_issues') => void;
 }
+
+export const LogsOverview = forwardRef<LogsOverviewApi, LogsOverviewProps>(
+  (
+    {
+      columns,
+      dataView,
+      hit,
+      filter,
+      onAddColumn,
+      onRemoveColumn,
+      renderAIAssistant,
+      docViewerAccordionState,
+      renderStreamsField,
+    },
+    ref
+  ) => {
+    const { fieldFormats } = getUnifiedDocViewerServices();
+    const parsedDoc = getLogDocumentOverview(hit, { dataView, fieldFormats });
+    const LogsOverviewAIAssistant = renderAIAssistant;
+    const stacktraceFields = getStacktraceFields(hit as LogDocument);
+    const isStacktraceAvailable = Object.values(stacktraceFields).some(Boolean);
+    const isStacktraceSectionExpanded = docViewerAccordionState?.stacktrace ?? false;
+    const isQualityIssuesSectionExpanded = docViewerAccordionState?.quality_issues ?? false;
+    const stackTraceSectionRef = useRef<HTMLDivElement>(null);
+    const qualityIssuesSectionRef = useRef<HTMLDivElement>(null);
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        scrollToSection: (section) => {
+          setTimeout(() => {
+            if (section === 'stacktrace' && stackTraceSectionRef.current) {
+              stackTraceSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else if (section === 'quality_issues' && qualityIssuesSectionRef.current) {
+              qualityIssuesSectionRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+              });
+            }
+          }, 100);
+        },
+      }),
+      []
+    );
+
+    return (
+      <FieldActionsProvider
+        columns={columns}
+        filter={filter}
+        onAddColumn={onAddColumn}
+        onRemoveColumn={onRemoveColumn}
+      >
+        <EuiSpacer size="m" />
+        <LogsOverviewHeader doc={parsedDoc} />
+        <EuiHorizontalRule margin="xs" />
+        <LogsOverviewHighlights
+          formattedDoc={parsedDoc}
+          doc={hit}
+          renderStreamsField={renderStreamsField}
+        />
+        <LogsOverviewDegradedFields
+          ref={qualityIssuesSectionRef}
+          rawDoc={hit.raw}
+          isExpanded={isQualityIssuesSectionExpanded}
+        />
+        {isStacktraceAvailable && (
+          <LogsOverviewStacktraceSection
+            ref={stackTraceSectionRef}
+            hit={hit}
+            dataView={dataView}
+            isExpanded={isStacktraceSectionExpanded}
+          />
+        )}
+        {LogsOverviewAIAssistant && <LogsOverviewAIAssistant doc={hit} />}
+      </FieldActionsProvider>
+    );
+  }
+);
