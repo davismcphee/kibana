@@ -7,15 +7,13 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { i18n } from '@kbn/i18n';
 import {
   UnifiedDocViewerLogsOverview,
   type UnifiedDocViewerLogsOverviewApi,
 } from '@kbn/unified-doc-viewer-plugin/public';
-import useObservable from 'react-use/lib/useObservable';
-import useUnmount from 'react-use/lib/useUnmount';
-import { isEqual } from 'lodash';
+import { filter, skip } from 'rxjs';
 import type { ProfileProviderServices } from '../../../profile_provider_services';
 import type { LogDocumentProfileProvider } from '../profile';
 
@@ -41,42 +39,50 @@ export const createGetDocViewer =
           }),
           order: 0,
           component: function LogOverviewTab(props) {
-            const logsOverviewApi = useRef<UnifiedDocViewerLogsOverviewApi | null>(null);
-            const overviewContext = useObservable(
-              context.logOverviewContext$,
-              context.logOverviewContext$.getValue()
+            const [logsOverviewApi, setLogsOverviewApi] =
+              useState<UnifiedDocViewerLogsOverviewApi | null>(null);
+            const initialAccordionSection = useRef(
+              context.logOverviewContext$.getValue()?.initialAccordionSection
             );
 
             useEffect(() => {
-              if (overviewContext?.initialAccordionSection) {
-                logsOverviewApi.current?.scrollToSection(overviewContext.initialAccordionSection);
-              }
-            }, [overviewContext]);
+              context.logOverviewContext$.next(undefined);
 
-            useUnmount(() => {
-              const currentOverviewContext = context.logOverviewContext$.getValue();
-              if (isEqual(currentOverviewContext, overviewContext)) {
-                context.logOverviewContext$.next(undefined);
+              if (!logsOverviewApi) {
+                return;
               }
-            });
 
-            const accordionState = React.useMemo(() => {
-              return overviewContext?.recordId === props.hit.id &&
-                overviewContext?.initialAccordionSection
-                ? { [overviewContext.initialAccordionSection]: true }
-                : {};
-            }, [overviewContext, props.hit.id]);
+              if (initialAccordionSection.current) {
+                logsOverviewApi.openAndScrollToSection(initialAccordionSection.current);
+              }
+
+              initialAccordionSection.current = undefined;
+
+              const subscription = context.logOverviewContext$
+                .pipe(
+                  skip(1),
+                  filter((overviewContext) => {
+                    return (
+                      overviewContext !== undefined &&
+                      overviewContext.initialAccordionSection !== undefined &&
+                      overviewContext.recordId === props.hit.id
+                    );
+                  })
+                )
+                .subscribe((overviewContext) => {
+                  logsOverviewApi.openAndScrollToSection(overviewContext!.initialAccordionSection!);
+                  context.logOverviewContext$.next(undefined);
+                });
+
+              return () => {
+                subscription.unsubscribe();
+              };
+            }, [logsOverviewApi, props.hit.id]);
 
             return (
               <UnifiedDocViewerLogsOverview
                 {...props}
-                ref={(api) => {
-                  if (!logsOverviewApi.current && api && overviewContext?.initialAccordionSection) {
-                    api.scrollToSection(overviewContext.initialAccordionSection);
-                  }
-                  logsOverviewApi.current = api;
-                }}
-                docViewerAccordionState={accordionState}
+                ref={setLogsOverviewApi}
                 renderAIAssistant={logsAIAssistantFeature?.render}
                 renderStreamsField={streamsFeature?.renderStreamsField}
               />

@@ -20,16 +20,15 @@ import { FieldActionsProvider } from '../../hooks/use_field_actions';
 import { getUnifiedDocViewerServices } from '../../plugin';
 import { LogsOverviewDegradedFields } from './logs_overview_degraded_fields';
 import { LogsOverviewStacktraceSection } from './logs_overview_stacktrace_section';
-import { ScrollableSectionWrapperApi } from './use_scrollable_section';
+import { ScrollableSectionWrapperApi } from './scrollable_section_wrapper';
 
 export type LogsOverviewProps = DocViewRenderProps & {
   renderAIAssistant?: (deps: ObservabilityLogsAIAssistantFeatureRenderDeps) => JSX.Element;
-  docViewerAccordionState?: Partial<Record<'stacktrace' | 'quality_issues', boolean>>;
   renderStreamsField?: (deps: StreamsFeatureRenderDeps) => JSX.Element;
 };
 
 export interface LogsOverviewApi {
-  scrollToSection: (section: 'stacktrace' | 'quality_issues') => void;
+  openAndScrollToSection: (section: 'stacktrace' | 'quality_issues') => void;
 }
 
 export const LogsOverview = forwardRef<LogsOverviewApi, LogsOverviewProps>(
@@ -42,7 +41,6 @@ export const LogsOverview = forwardRef<LogsOverviewApi, LogsOverviewProps>(
       onAddColumn,
       onRemoveColumn,
       renderAIAssistant,
-      docViewerAccordionState,
       renderStreamsField,
     },
     ref
@@ -52,15 +50,13 @@ export const LogsOverview = forwardRef<LogsOverviewApi, LogsOverviewProps>(
     const LogsOverviewAIAssistant = renderAIAssistant;
     const stacktraceFields = getStacktraceFields(hit as LogDocument);
     const isStacktraceAvailable = Object.values(stacktraceFields).some(Boolean);
-    const isStacktraceSectionExpanded = docViewerAccordionState?.stacktrace ?? false;
-    const isQualityIssuesSectionExpanded = docViewerAccordionState?.quality_issues ?? false;
     const stackTraceSectionRef = useRef<ScrollableSectionWrapperApi>(null);
     const qualityIssuesSectionRef = useRef<ScrollableSectionWrapperApi>(null);
 
     useImperativeHandle(
       ref,
       () => ({
-        scrollToSection: (section) => {
+        openAndScrollToSection: (section) => {
           if (section === 'quality_issues') {
             qualityIssuesSectionRef.current?.openAndScrollToSection();
           } else if (section === 'stacktrace') {

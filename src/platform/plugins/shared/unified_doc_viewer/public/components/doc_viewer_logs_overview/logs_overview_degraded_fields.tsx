@@ -31,7 +31,10 @@ import {
 } from '@kbn/deeplinks-observability';
 import { BrowserUrlService } from '@kbn/share-plugin/public';
 import { getUnifiedDocViewerServices } from '../../plugin';
-import { ScrollableSectionWrapperApi, useScrollableSection } from './use_scrollable_section';
+import {
+  ScrollableSectionWrapper,
+  ScrollableSectionWrapperApi,
+} from './scrollable_section_wrapper';
 
 type Direction = 'asc' | 'desc';
 type SortField = 'issue' | 'values';
@@ -189,31 +192,33 @@ export const LogsOverviewDegradedFields = forwardRef<
     </EuiFlexGroup>
   );
 
-  const { wrapperRef, forceState, onToggle } = useScrollableSection(ref);
-
   return countOfDegradedFields > 0 ? (
-    <div ref={wrapperRef}>
-      <EuiAccordion
-        id={accordionId}
-        buttonContent={accordionTitle}
-        paddingSize="m"
-        forceState={forceState}
-        onToggle={onToggle}
-        extraAction={<DatasetQualityLink urlService={urlService} dataStream={dataStream} />}
-        data-test-subj="unifiedDocViewLogsOverviewDegradedFieldsAccordion"
-      >
-        <EuiBasicTable
-          tableLayout="fixed"
-          columns={columns}
-          items={renderedItems ?? []}
-          sorting={{ sort: tableOptions.sort }}
-          onChange={onTableChange}
-          pagination={pagination}
-          data-test-subj="unifiedDocViewLogsOverviewDegradedFieldsQualityIssuesTable"
-        />
-      </EuiAccordion>
-      <EuiHorizontalRule margin="xs" />
-    </div>
+    <ScrollableSectionWrapper ref={ref}>
+      {({ forceState, onToggle }) => (
+        <>
+          <EuiAccordion
+            id={accordionId}
+            buttonContent={accordionTitle}
+            paddingSize="m"
+            forceState={forceState}
+            onToggle={onToggle}
+            extraAction={<DatasetQualityLink urlService={urlService} dataStream={dataStream} />}
+            data-test-subj="unifiedDocViewLogsOverviewDegradedFieldsAccordion"
+          >
+            <EuiBasicTable
+              tableLayout="fixed"
+              columns={columns}
+              items={renderedItems ?? []}
+              sorting={{ sort: tableOptions.sort }}
+              onChange={onTableChange}
+              pagination={pagination}
+              data-test-subj="unifiedDocViewLogsOverviewDegradedFieldsQualityIssuesTable"
+            />
+          </EuiAccordion>
+          <EuiHorizontalRule margin="xs" />
+        </>
+      )}
+    </ScrollableSectionWrapper>
   ) : null;
 });
 
