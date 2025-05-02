@@ -12,6 +12,7 @@ import { i18n } from '@kbn/i18n';
 import React, { forwardRef } from 'react';
 import type { DataView } from '@kbn/data-views-plugin/public';
 import { StacktraceContent } from './sub_components/stacktrace/stacktrace_content';
+import { ScrollableSectionWrapperApi, useScrollableSection } from './use_scrollable_section';
 
 const stacktraceAccordionTitle = i18n.translate(
   'unifiedDocViewer.docView.logsOverview.accordion.title.stacktrace',
@@ -21,19 +22,19 @@ const stacktraceAccordionTitle = i18n.translate(
 );
 
 export const LogsOverviewStacktraceSection = forwardRef<
-  HTMLDivElement,
+  ScrollableSectionWrapperApi,
   {
     hit: DataTableRecord;
     dataView: DataView;
-    isExpanded: boolean;
   }
->(({ hit, dataView, isExpanded }, ref) => {
+>(({ hit, dataView }, ref) => {
   const accordionId = useGeneratedHtmlId({
     prefix: stacktraceAccordionTitle,
   });
+  const { wrapperRef, forceState, onToggle } = useScrollableSection(ref);
 
   return (
-    <div ref={ref}>
+    <div ref={wrapperRef}>
       <EuiAccordion
         id={accordionId}
         buttonContent={
@@ -42,7 +43,8 @@ export const LogsOverviewStacktraceSection = forwardRef<
           </EuiTitle>
         }
         paddingSize="m"
-        initialIsOpen={isExpanded}
+        forceState={forceState}
+        onToggle={onToggle}
         data-test-subj="unifiedDocViewLogsOverviewStacktraceAccordion"
       >
         <StacktraceContent hit={hit} dataView={dataView} />

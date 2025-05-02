@@ -71,7 +71,7 @@ export const createGetDocViewer =
               <UnifiedDocViewerLogsOverview
                 {...props}
                 ref={(api) => {
-                  if (api && overviewContext?.initialAccordionSection) {
+                  if (!logsOverviewApi.current && api && overviewContext?.initialAccordionSection) {
                     api.scrollToSection(overviewContext.initialAccordionSection);
                   }
                   logsOverviewApi.current = api;

@@ -20,6 +20,7 @@ import { FieldActionsProvider } from '../../hooks/use_field_actions';
 import { getUnifiedDocViewerServices } from '../../plugin';
 import { LogsOverviewDegradedFields } from './logs_overview_degraded_fields';
 import { LogsOverviewStacktraceSection } from './logs_overview_stacktrace_section';
+import { ScrollableSectionWrapperApi } from './use_scrollable_section';
 
 export type LogsOverviewProps = DocViewRenderProps & {
   renderAIAssistant?: (deps: ObservabilityLogsAIAssistantFeatureRenderDeps) => JSX.Element;
@@ -53,23 +54,18 @@ export const LogsOverview = forwardRef<LogsOverviewApi, LogsOverviewProps>(
     const isStacktraceAvailable = Object.values(stacktraceFields).some(Boolean);
     const isStacktraceSectionExpanded = docViewerAccordionState?.stacktrace ?? false;
     const isQualityIssuesSectionExpanded = docViewerAccordionState?.quality_issues ?? false;
-    const stackTraceSectionRef = useRef<HTMLDivElement>(null);
-    const qualityIssuesSectionRef = useRef<HTMLDivElement>(null);
+    const stackTraceSectionRef = useRef<ScrollableSectionWrapperApi>(null);
+    const qualityIssuesSectionRef = useRef<ScrollableSectionWrapperApi>(null);
 
     useImperativeHandle(
       ref,
       () => ({
         scrollToSection: (section) => {
-          setTimeout(() => {
-            if (section === 'stacktrace' && stackTraceSectionRef.current) {
-              stackTraceSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } else if (section === 'quality_issues' && qualityIssuesSectionRef.current) {
-              qualityIssuesSectionRef.current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-              });
-            }
-          }, 100);
+          if (section === 'quality_issues') {
+            qualityIssuesSectionRef.current?.openAndScrollToSection();
+          } else if (section === 'stacktrace') {
+            stackTraceSectionRef.current?.openAndScrollToSection();
+          }
         },
       }),
       []
@@ -90,18 +86,9 @@ export const LogsOverview = forwardRef<LogsOverviewApi, LogsOverviewProps>(
           doc={hit}
           renderStreamsField={renderStreamsField}
         />
-        <LogsOverviewDegradedFields
-          ref={qualityIssuesSectionRef}
-          rawDoc={hit.raw}
-          isExpanded={isQualityIssuesSectionExpanded}
-        />
+        <LogsOverviewDegradedFields ref={qualityIssuesSectionRef} rawDoc={hit.raw} />
         {isStacktraceAvailable && (
-          <LogsOverviewStacktraceSection
-            ref={stackTraceSectionRef}
-            hit={hit}
-            dataView={dataView}
-            isExpanded={isStacktraceSectionExpanded}
-          />
+          <LogsOverviewStacktraceSection ref={stackTraceSectionRef} hit={hit} dataView={dataView} />
         )}
         {LogsOverviewAIAssistant && <LogsOverviewAIAssistant doc={hit} />}
       </FieldActionsProvider>

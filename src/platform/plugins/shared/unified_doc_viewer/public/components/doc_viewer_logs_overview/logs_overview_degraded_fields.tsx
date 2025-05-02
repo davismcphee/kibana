@@ -31,6 +31,7 @@ import {
 } from '@kbn/deeplinks-observability';
 import { BrowserUrlService } from '@kbn/share-plugin/public';
 import { getUnifiedDocViewerServices } from '../../plugin';
+import { ScrollableSectionWrapperApi, useScrollableSection } from './use_scrollable_section';
 
 type Direction = 'asc' | 'desc';
 type SortField = 'issue' | 'values';
@@ -109,9 +110,9 @@ export const datasetQualityLinkTitle = i18n.translate(
 );
 
 export const LogsOverviewDegradedFields = forwardRef<
-  HTMLDivElement,
-  { rawDoc: DataTableRecord['raw']; isExpanded: boolean }
->(({ rawDoc, isExpanded }, ref) => {
+  ScrollableSectionWrapperApi,
+  { rawDoc: DataTableRecord['raw'] }
+>(({ rawDoc }, ref) => {
   const { ignored_field_values: ignoredFieldValues = {}, fields: sourceFields = {} } = rawDoc;
   const countOfDegradedFields = Object.keys(ignoredFieldValues)?.length;
 
@@ -188,13 +189,16 @@ export const LogsOverviewDegradedFields = forwardRef<
     </EuiFlexGroup>
   );
 
+  const { wrapperRef, forceState, onToggle } = useScrollableSection(ref);
+
   return countOfDegradedFields > 0 ? (
-    <div ref={ref}>
+    <div ref={wrapperRef}>
       <EuiAccordion
         id={accordionId}
         buttonContent={accordionTitle}
         paddingSize="m"
-        initialIsOpen={isExpanded}
+        forceState={forceState}
+        onToggle={onToggle}
         extraAction={<DatasetQualityLink urlService={urlService} dataStream={dataStream} />}
         data-test-subj="unifiedDocViewLogsOverviewDegradedFieldsAccordion"
       >
