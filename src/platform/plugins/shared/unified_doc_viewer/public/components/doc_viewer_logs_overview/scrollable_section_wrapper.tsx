@@ -60,7 +60,7 @@ export const ScrollableSectionWrapper = forwardRef<
           setTimeout(() => {
             wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
             setState((prev) => ({ ...prev, skipTransition: false }));
-          });
+          }, 100);
 
         if (forceState === 'open') {
           scrollIntoView();
