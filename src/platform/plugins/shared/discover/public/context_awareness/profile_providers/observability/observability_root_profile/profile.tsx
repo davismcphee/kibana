@@ -8,6 +8,7 @@
  */
 
 import { DocumentType, SolutionType } from '../../../profiles';
+import { extendProfileProvider } from '../../extend_profile_provider';
 import type { ProfileProviderServices } from '../../profile_provider_services';
 import { OBSERVABILITY_ROOT_PROFILE_ID } from '../consts';
 import { createGetAppMenu, getDefaultAdHocDataViews, getDocViewer } from './accessors';
@@ -37,3 +38,25 @@ export const createObservabilityRootProfileProvider = (
     };
   },
 });
+
+export const createObservabilityRootProfileProviderWithAttributesTab = (
+  observabilityRootProfileProvider: ObservabilityRootProfileProvider
+) =>
+  extendProfileProvider(observabilityRootProfileProvider, {
+    profileId: 'observability-root-profile-with-attributes-tab',
+    isExperimental: true,
+    profile: {
+      getDocViewer,
+    },
+  });
+
+export const createObservabilityRootProfileProviders = (
+  providerServices: ProfileProviderServices
+) => {
+  const observabilityRootProfileProvider = createObservabilityRootProfileProvider(providerServices);
+
+  return [
+    createObservabilityRootProfileProviderWithAttributesTab(observabilityRootProfileProvider),
+    observabilityRootProfileProvider,
+  ];
+};
