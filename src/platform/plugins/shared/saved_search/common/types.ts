@@ -121,7 +121,7 @@ export interface DiscoverSessionTab {
 }
 
 export interface DiscoverSession {
-  id?: string;
+  id: string;
   title: string;
   description: string;
   tabs: DiscoverSessionTab[];
