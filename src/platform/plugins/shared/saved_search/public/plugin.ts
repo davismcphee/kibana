@@ -27,6 +27,8 @@ import type { DiscoverSession, SavedSearch, SerializableSavedSearch } from '../c
 import { getKibanaContext } from './expressions/kibana_context';
 import type {
   getNewSavedSearch,
+  saveDiscoverSession,
+  SaveDiscoverSessionOptions,
   SavedSearchUnwrapResult,
   saveSavedSearch,
   SaveSavedSearchOptions,
@@ -56,6 +58,10 @@ export interface SavedSearchPublicPluginStart {
     savedSearch: SavedSearch,
     options?: SaveSavedSearchOptions
   ) => ReturnType<typeof saveSavedSearch>;
+  saveDiscoverSession: (
+    discoverSession: DiscoverSession,
+    options?: SaveDiscoverSessionOptions
+  ) => ReturnType<typeof saveDiscoverSession>;
   checkForDuplicateTitle: (
     props: Pick<OnSaveProps, 'newTitle' | 'isTitleDuplicateConfirmed' | 'onTitleDuplicate'>
   ) => Promise<void>;
@@ -141,6 +147,9 @@ export class SavedSearchPublicPlugin
       getAll: () => service.getAll(),
       getNew: () => service.getNew(),
       save: (savedSearch, options) => service.save(savedSearch, options),
+      saveDiscoverSession: (discoverSession, options) => {
+        return service.saveDiscoverSession(discoverSession, options);
+      },
       checkForDuplicateTitle: (props) => {
         return checkForDuplicateTitle({
           title: props.newTitle,
