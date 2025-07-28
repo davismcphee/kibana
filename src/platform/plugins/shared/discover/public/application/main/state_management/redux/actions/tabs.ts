@@ -25,6 +25,7 @@ import {
   selectTabRuntimeAppState,
   selectTabRuntimeGlobalState,
   selectRestorableTabRuntimeHistogramLayoutProps,
+  selectTabRuntimeInternalState,
 } from '../runtime_state';
 import { APP_STATE_URL_KEY, GLOBAL_STATE_URL_KEY } from '../../../../../../common/constants';
 import type { DiscoverAppState } from '../../discover_app_state_container';
@@ -109,6 +110,9 @@ export const updateTabs: InternalStateThunkActionCreator<[TabbedContentState], P
           return tab;
         }
 
+        tab.initialInternalState =
+          selectTabRuntimeInternalState(runtimeStateManager, item.duplicatedFromId) ??
+          cloneDeep(existingTabToDuplicateFrom.initialInternalState);
         tab.initialAppState =
           selectTabRuntimeAppState(runtimeStateManager, item.duplicatedFromId) ??
           cloneDeep(existingTabToDuplicateFrom.initialAppState);
@@ -182,6 +186,7 @@ export const updateTabAppStateAndGlobalState: InternalStateThunkActionCreator<[T
     dispatch(
       internalStateSlice.actions.setTabAppStateAndGlobalState({
         tabId,
+        internalState: selectTabRuntimeInternalState(runtimeStateManager, tabId),
         appState: selectTabRuntimeAppState(runtimeStateManager, tabId),
         globalState: selectTabRuntimeGlobalState(runtimeStateManager, tabId),
       })
