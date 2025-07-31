@@ -23,7 +23,6 @@ import {
   createTabRuntimeState,
   selectTabRuntimeState,
   selectTabRuntimeAppState,
-  selectTabRuntimeGlobalState,
   selectRestorableTabRuntimeHistogramLayoutProps,
   selectTabRuntimeInternalState,
 } from '../runtime_state';
@@ -189,13 +188,13 @@ export const updateTabs: InternalStateThunkActionCreator<[TabbedContentState], P
 
 export const updateTabAppStateAndGlobalState: InternalStateThunkActionCreator<[TabActionPayload]> =
   ({ tabId }) =>
-  (dispatch, _, { runtimeStateManager }) => {
+  (dispatch, getState, { runtimeStateManager }) => {
     dispatch(
       internalStateSlice.actions.setTabAppStateAndGlobalState({
         tabId,
         internalState: selectTabRuntimeInternalState(runtimeStateManager, tabId),
         appState: selectTabRuntimeAppState(runtimeStateManager, tabId),
-        globalState: selectTabRuntimeGlobalState(runtimeStateManager, tabId),
+        globalState: selectTab(getState(), tabId).lastPersistedGlobalState,
       })
     );
   };
