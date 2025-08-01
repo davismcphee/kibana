@@ -159,7 +159,7 @@ export class SavedSearchPublicPlugin
           contentManagement: deps.contentManagement,
         });
       },
-      byValueToSavedSearch: (result, serialized?) => byValueToSavedSearch(result, deps, serialized),
+      byValueToSavedSearch: (result, serialized) => byValueToSavedSearch(result, deps, serialized),
     };
   }
 }
