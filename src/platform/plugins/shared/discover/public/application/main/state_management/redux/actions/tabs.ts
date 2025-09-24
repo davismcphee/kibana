@@ -96,10 +96,14 @@ export const updateTabs: InternalStateThunkActionCreator<
   Promise<void>
 > =
   ({ items, selectedItem }) =>
-  async (dispatch, getState, { services, runtimeStateManager, urlStateStorage }) => {
+  async (
+    dispatch,
+    getState,
+    { services, runtimeStateManager, tabsStorageManager, urlStateStorage }
+  ) => {
     const currentState = getState();
-    const currentTabId = currentState.tabs.unsafeCurrentId;
-    const currentTabRuntimeState = selectTabRuntimeState(runtimeStateManager, currentTabId);
+    const currentTab = selectTab(currentState, currentState.tabs.unsafeCurrentId);
+    const currentTabRuntimeState = selectTabRuntimeState(runtimeStateManager, currentTab.id);
     const currentTabStateContainer = currentTabRuntimeState.stateContainer$.getValue();
 
     const updatedTabs = items.map<TabState>((item) => {
@@ -151,7 +155,7 @@ export const updateTabs: InternalStateThunkActionCreator<
           tab.uiState = cloneDeep(existingTabToDuplicateFrom.uiState);
         } else {
           // the new tab is a fresh one
-          const currentQuery = selectTabRuntimeAppState(runtimeStateManager, currentTabId)?.query;
+          const currentQuery = selectTabRuntimeAppState(runtimeStateManager, currentTab.id)?.query;
           const currentDataView = currentTabRuntimeState.currentDataView$.getValue();
 
           if (!currentQuery || !currentDataView) {
@@ -173,15 +177,18 @@ export const updateTabs: InternalStateThunkActionCreator<
       return tab;
     });
 
-    if (selectedItem?.id !== currentTabId) {
+    const selectedTab = selectedItem ?? currentTab;
+
+    // Push the selected tab ID to the URL, which creates a new browser history entry.
+    // This must be done before setting other URL state, which replace the history entry
+    // in order to avoid creating multiple browser history entries when switching tabs.
+    await tabsStorageManager.pushSelectedTabIdToUrl(selectedTab.id);
+
+    if (selectedTab.id !== currentTab.id) {
       currentTabStateContainer?.actions.stopSyncing();
 
-      const nextTab = selectedItem
-        ? updatedTabs.find((tab) => tab.id === selectedItem.id)
-        : undefined;
-      const nextTabRuntimeState = selectedItem
-        ? selectTabRuntimeState(runtimeStateManager, selectedItem.id)
-        : undefined;
+      const nextTab = updatedTabs.find((tab) => tab.id === selectedTab.id);
+      const nextTabRuntimeState = selectTabRuntimeState(runtimeStateManager, selectedTab.id);
       const nextTabStateContainer = nextTabRuntimeState?.stateContainer$.getValue();
 
       if (nextTab && nextTabStateContainer) {
@@ -189,12 +196,16 @@ export const updateTabs: InternalStateThunkActionCreator<
         const appState = nextTabStateContainer.appState.getState();
         const { filters: appFilters, query } = appState;
 
-        await urlStateStorage.set<QueryState>(GLOBAL_STATE_URL_KEY, {
-          time: timeRange,
-          refreshInterval,
-          filters: globalFilters,
-        });
-        await urlStateStorage.set<DiscoverAppState>(APP_STATE_URL_KEY, appState);
+        await urlStateStorage.set<QueryState>(
+          GLOBAL_STATE_URL_KEY,
+          {
+            time: timeRange,
+            refreshInterval,
+            filters: globalFilters,
+          },
+          { replace: true }
+        );
+        await urlStateStorage.set<DiscoverAppState>(APP_STATE_URL_KEY, appState, { replace: true });
 
         services.timefilter.setTime(timeRange ?? services.timefilter.getTimeDefaults());
         services.timefilter.setRefreshInterval(
@@ -213,8 +224,8 @@ export const updateTabs: InternalStateThunkActionCreator<
           nextTabStateContainer.actions.fetchData();
         }
       } else {
-        await urlStateStorage.set(GLOBAL_STATE_URL_KEY, null);
-        await urlStateStorage.set(APP_STATE_URL_KEY, null);
+        await urlStateStorage.set(GLOBAL_STATE_URL_KEY, null, { replace: true });
+        await urlStateStorage.set(APP_STATE_URL_KEY, null, { replace: true });
       }
 
       dispatch(internalStateSlice.actions.discardFlyoutsOnTabChange());
@@ -223,7 +234,7 @@ export const updateTabs: InternalStateThunkActionCreator<
     dispatch(
       setTabs({
         allTabs: updatedTabs,
-        selectedTabId: selectedItem?.id ?? currentTabId,
+        selectedTabId: selectedTab.id,
         recentlyClosedTabs: selectRecentlyClosedTabs(currentState),
       })
     );
@@ -290,6 +301,12 @@ export const initializeTabs = createInternalStateAsyncThunk(
       defaultTabState: DEFAULT_TAB_STATE,
     });
 
+    // Replace instead of push to the URL on initialization in order to avoid
+    // capturing a browser history entry with a potentially empty _tab state
+    await tabsStorageManager.pushSelectedTabIdToUrl(initialTabsState.selectedTabId, {
+      replace: true,
+    });
+
     dispatch(setTabs(initialTabsState));
 
     return { userId, spaceId, persistedDiscoverSession };
@@ -337,6 +354,7 @@ export const restoreTab: InternalStateThunkActionCreator<[{ restoreTabId: string
     return dispatch(
       updateTabs({
         items,
+        // TODO: should we even call updateTabs if selectedItem is not found or just return?
         selectedItem: selectedItem || currentTab,
       })
     );
