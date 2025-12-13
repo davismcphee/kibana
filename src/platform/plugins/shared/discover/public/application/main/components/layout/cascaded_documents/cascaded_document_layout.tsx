@@ -33,7 +33,6 @@ import {
   type ESQLDataGroupNode,
 } from './blocks';
 import { cascadedDocumentsStyles } from './cascaded_documents.styles';
-import { type CascadedDocumentsRestorableState } from './cascaded_documents_restorable_state';
 import { useEsqlDataCascadeRowActionHelpers } from './blocks/use_row_header_components';
 import {
   useDataCascadeRowExpansionHandlers,
@@ -41,6 +40,7 @@ import {
   useScopedESQLQueryFetchClient,
 } from './hooks';
 import type { DiscoverStateContainer } from '../../../state_management/discover_state';
+import type { CascadedDocumentsState } from '../../../state_management/redux';
 
 export { getESQLStatsQueryMeta };
 export { useGetGroupBySelectorRenderer as useGroupBySelectorRenderer } from './blocks/use_table_header_components';
@@ -49,7 +49,7 @@ export interface ESQLDataCascadeProps extends Omit<UnifiedDataTableProps, 'ref'>
   defaultFilters?: Filter[];
   viewModeToggle: React.ReactElement | undefined;
   cascadeGroupingChangeHandler: (cascadeGrouping: string[]) => void;
-  cascadeConfig: CascadedDocumentsRestorableState;
+  cascadeConfig: CascadedDocumentsState;
   togglePopover: ReturnType<typeof useEsqlDataCascadeRowActionHelpers>['togglePopover'];
   queryMeta: ESQLStatsQueryMeta;
 }
