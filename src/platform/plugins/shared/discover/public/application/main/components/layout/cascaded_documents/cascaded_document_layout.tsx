@@ -65,12 +65,11 @@ const ESQLDataCascade = React.memo(
     queryMeta,
     ...props
   }: ESQLDataCascadeProps) => {
-    const [query, defaultFilters] = useAppStateSelector((state) => [state.query, state.filters]);
+    const query = useAppStateSelector((state) => state.query);
     const [globalState, esqlVariables] = useCurrentTabSelector((state) => [
       state.globalState,
       state.esqlVariables,
     ]);
-    const globalFilters = globalState?.filters;
     const globalTimeRange = globalState?.timeRange;
     const { scopedProfilesManager } = useScopedServices();
     const { expressions } = useDiscoverServices();
@@ -88,10 +87,6 @@ const ESQLDataCascade = React.memo(
       data: props.services.data,
       esqlVariables,
       expressions,
-      filters: [
-        ...(globalFilters?.filter((f) => f.meta.disabled === false) ?? []),
-        ...(defaultFilters ?? []),
-      ],
       ...(globalTimeRange && {
         timeRange: {
           to: globalTimeRange.to,

@@ -107,13 +107,7 @@ export const useGroupedCascadeData = ({
 interface UseScopedESQLQueryFetchClientProps
   extends Pick<
     Parameters<typeof fetchEsql>[0],
-    | 'dataView'
-    | 'data'
-    | 'expressions'
-    | 'filters'
-    | 'timeRange'
-    | 'scopedProfilesManager'
-    | 'esqlVariables'
+    'dataView' | 'data' | 'expressions' | 'timeRange' | 'scopedProfilesManager' | 'esqlVariables'
   > {
   query: AggregateQuery;
 }
@@ -127,7 +121,6 @@ export function useScopedESQLQueryFetchClient({
   data,
   expressions,
   esqlVariables,
-  filters,
   timeRange,
   scopedProfilesManager,
 }: UseScopedESQLQueryFetchClientProps) {
@@ -153,7 +146,6 @@ export function useScopedESQLQueryFetchClient({
         data,
         expressions,
         abortSignal,
-        filters,
         timeRange,
         scopedProfilesManager,
         inspectorAdapters,
@@ -163,7 +155,6 @@ export function useScopedESQLQueryFetchClient({
       dataView,
       esqlVariables,
       expressions,
-      filters,
       inspectorAdapters,
       scopedProfilesManager,
       timeRange,
