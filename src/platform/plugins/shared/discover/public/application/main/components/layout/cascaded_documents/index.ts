@@ -7,5 +7,13 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-export { CascadedDocumentsLayout, useGroupBySelectorRenderer } from './cascaded_document_layout';
+export { useGetGroupBySelectorRenderer } from './blocks/use_table_header_components';
+export { LazyCascadedDocumentsLayout } from './lazy_cascaded_document_layout';
 export type { ESQLDataCascadeProps } from './cascaded_document_layout';
+export {
+  type CascadedDocumentsContext,
+  CascadedDocumentsProvider,
+  isCascadedDocumentsVisible,
+  useMaybeCascadedDocumentsContext,
+  useCascadedDocumentsContext,
+} from './cascaded_documents_provider';

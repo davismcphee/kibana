@@ -7,17 +7,16 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-import { useCurrentTabSelector } from '../../../../state_management/redux';
+import { withSuspense } from '@kbn/shared-ux-utility';
+import { lazy } from 'react';
+import type { CascadedDocumentsLayoutProps } from './cascaded_document_layout';
 
-const SUPPORTED_CASCADE_GROUPING_COUNT = 1;
-
-export const useReadCascadeConfig = () => {
-  const cascadeConfig = useCurrentTabSelector((state) => state.cascadedDocumentsState);
-
-  if (
-    cascadeConfig.availableCascadeGroups.length &&
-    cascadeConfig.availableCascadeGroups.length <= SUPPORTED_CASCADE_GROUPING_COUNT
-  ) {
-    return cascadeConfig;
-  }
-};
+export const LazyCascadedDocumentsLayout = withSuspense<CascadedDocumentsLayoutProps>(
+  lazy(() =>
+    import('./cascaded_document_layout').then(({ CascadedDocumentsLayout }) => {
+      return {
+        default: CascadedDocumentsLayout,
+      };
+    })
+  )
+);
