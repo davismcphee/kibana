@@ -29,9 +29,11 @@ const setup = async ({ services }: { services?: DiscoverServices } = {}) => {
   const toolkit = getDiscoverInternalStateMock({ services });
 
   await toolkit.initializeTabs();
-  await toolkit.initializeSingleTab({ tabId: toolkit.getCurrentTab().id });
+  const { customizationService } = await toolkit.initializeSingleTab({
+    tabId: toolkit.getCurrentTab().id,
+  });
 
-  return { toolkit };
+  return { toolkit, customizationService };
 };
 
 async function mountComponent({
@@ -136,11 +138,7 @@ describe('Discover documents layout', () => {
   });
 
   test('should render customisations', async () => {
-    const { toolkit } = await setup();
-    const customizationService = selectTabRuntimeState(
-      toolkit.runtimeStateManager,
-      toolkit.getCurrentTab().id
-    ).customizationService$.getValue()!;
+    const { toolkit, customizationService } = await setup();
     const customization: DiscoverCustomization = {
       id: 'data_table',
       logsEnabled: true,
@@ -169,11 +167,7 @@ describe('Discover documents layout', () => {
 
       await services.profilesManager.resolveRootProfile({ solutionNavId: 'test' });
 
-      const { toolkit } = await setup({ services });
-      const customizationService = selectTabRuntimeState(
-        toolkit.runtimeStateManager,
-        toolkit.getCurrentTab().id
-      ).customizationService$.getValue()!;
+      const { toolkit, customizationService } = await setup({ services });
 
       customizationService.set({
         id: 'data_table',
