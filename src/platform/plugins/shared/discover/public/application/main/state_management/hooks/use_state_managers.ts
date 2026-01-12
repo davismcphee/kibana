@@ -69,6 +69,7 @@ export const useStateManagers = ({
       urlStateStorage,
       tabsStorageManager,
       searchSessionManager,
+      embeddableState,
     })
   );
 

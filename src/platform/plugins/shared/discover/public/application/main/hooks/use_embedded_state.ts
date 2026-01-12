@@ -8,15 +8,17 @@
  */
 
 import { useMemo, useRef } from 'react';
+import type { DiscoverSessionTab } from '@kbn/saved-search-plugin/common';
 import { useDiscoverServices } from '../../../hooks/use_discover_services';
 
 export interface EmbeddedState {
   isByValueEditor(): boolean;
   isEmbeddedEditor(): boolean;
+  getByValueInput(): DiscoverSessionTab | undefined;
   transferBackToEditor(): void;
 }
 
-export function useEmbeddedState() {
+export function useEmbeddedState(): EmbeddedState {
   const { embeddable, application } = useDiscoverServices();
   const embeddedTransfer = useRef(embeddable.getStateTransfer());
   const embeddableState = useMemo(
@@ -26,8 +28,9 @@ export function useEmbeddedState() {
 
   return useMemo(
     () => ({
-      isByValueEditor: () => !Boolean(embeddableState?.searchSessionId),
+      isByValueEditor: () => Boolean(embeddableState?.valueInput),
       isEmbeddedEditor: () => Boolean(embeddableState),
+      getByValueInput: () => embeddableState?.valueInput as DiscoverSessionTab | undefined,
       transferBackToEditor: () => {
         if (embeddableState) {
           const app = embeddableState.originatingApp;
