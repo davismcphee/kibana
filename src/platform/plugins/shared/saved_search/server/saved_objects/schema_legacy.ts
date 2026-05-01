@@ -9,6 +9,7 @@
 
 import { schema } from '@kbn/config-schema';
 import type { SavedObjectsModelVersionMap } from '@kbn/core-saved-objects-server';
+import { DataGridDensity } from '@kbn/discover-utils';
 import { extractTabsBackfillFnV6 } from '../../common/service/extract_tabs';
 import {
   MIN_SAVED_SEARCH_SAMPLE_SIZE,
@@ -88,7 +89,7 @@ const SCHEMA_SEARCH_BASE = schema.object({
 
 export const SCHEMA_SEARCH_V8_8_0 = SCHEMA_SEARCH_BASE;
 
-export const SCHEMA_SEARCH_MODEL_VERSION_1 = SCHEMA_SEARCH_BASE.extends({
+const SCHEMA_SEARCH_MODEL_VERSION_1 = SCHEMA_SEARCH_BASE.extends({
   sampleSize: schema.maybe(
     schema.number({
       min: MIN_SAVED_SEARCH_SAMPLE_SIZE,
@@ -97,11 +98,11 @@ export const SCHEMA_SEARCH_MODEL_VERSION_1 = SCHEMA_SEARCH_BASE.extends({
   ),
 });
 
-export const SCHEMA_SEARCH_MODEL_VERSION_2 = SCHEMA_SEARCH_MODEL_VERSION_1.extends({
+const SCHEMA_SEARCH_MODEL_VERSION_2 = SCHEMA_SEARCH_MODEL_VERSION_1.extends({
   headerRowHeight: schema.maybe(schema.number()),
 });
 
-export const SCHEMA_SEARCH_MODEL_VERSION_3 = SCHEMA_SEARCH_MODEL_VERSION_2.extends({
+const SCHEMA_SEARCH_MODEL_VERSION_3 = SCHEMA_SEARCH_MODEL_VERSION_2.extends({
   visContext: schema.maybe(
     schema.oneOf([
       // existing value
@@ -123,7 +124,7 @@ export const SCHEMA_SEARCH_MODEL_VERSION_3 = SCHEMA_SEARCH_MODEL_VERSION_2.exten
   ),
 });
 
-export const SCHEMA_SEARCH_MODEL_VERSION_4 = SCHEMA_SEARCH_MODEL_VERSION_3.extends({
+const SCHEMA_SEARCH_MODEL_VERSION_4 = SCHEMA_SEARCH_MODEL_VERSION_3.extends({
   viewMode: schema.maybe(
     schema.oneOf([
       schema.literal(VIEW_MODE.DOCUMENT_LEVEL),
@@ -135,7 +136,11 @@ export const SCHEMA_SEARCH_MODEL_VERSION_4 = SCHEMA_SEARCH_MODEL_VERSION_3.exten
 
 export const SCHEMA_SEARCH_MODEL_VERSION_5 = SCHEMA_SEARCH_MODEL_VERSION_4.extends({
   density: schema.maybe(
-    schema.oneOf([schema.literal('compact'), schema.literal('normal'), schema.literal('expanded')])
+    schema.oneOf([
+      schema.literal(DataGridDensity.COMPACT),
+      schema.literal(DataGridDensity.EXPANDED),
+      schema.literal(DataGridDensity.NORMAL),
+    ])
   ),
 });
 
@@ -159,7 +164,7 @@ const { columns, grid, hideChart, isTextBasedQuery, kibanaSavedObjectMeta, rowHe
   SCHEMA_SEARCH_MODEL_VERSION_6.getPropSchemas();
 
 // Mark top-level attributes (except title and description) optional, and mark tabs as required
-export const SCHEMA_SEARCH_MODEL_VERSION_7 = SCHEMA_SEARCH_MODEL_VERSION_6.extends({
+const SCHEMA_SEARCH_MODEL_VERSION_7 = SCHEMA_SEARCH_MODEL_VERSION_6.extends({
   columns: schema.maybe(columns),
   grid: schema.maybe(grid),
   hideChart: schema.maybe(hideChart),
@@ -181,7 +186,7 @@ const SCHEMA_DISCOVER_SESSION_TAB_VERSION_8 = SCHEMA_DISCOVER_SESSION_TAB.extend
   attributes: DISCOVER_SESSION_TAB_ATTRIBUTES_VERSION_8,
 });
 
-export const SCHEMA_SEARCH_MODEL_VERSION_8 = SCHEMA_SEARCH_MODEL_VERSION_7.extends({
+const SCHEMA_SEARCH_MODEL_VERSION_8 = SCHEMA_SEARCH_MODEL_VERSION_7.extends({
   ...CONTROL_GROUP_JSON_SCHEMA,
   tabs: schema.arrayOf(SCHEMA_DISCOVER_SESSION_TAB_VERSION_8, { minSize: 1 }),
 });
@@ -198,7 +203,7 @@ const { tabs: tabsV8, ...restV8Props } = SCHEMA_SEARCH_MODEL_VERSION_8.getPropSc
 // It should not be relied on in application code or used for the content
 // management validation schema, and `tabs` should be required again once Core
 // provides a way to fix the underlying issue at the saved objects API level.
-export const SCHEMA_SEARCH_MODEL_VERSION_9_SO_API_WORKAROUND = schema.object({
+const SCHEMA_SEARCH_MODEL_VERSION_9_SO_API_WORKAROUND = schema.object({
   ...restV8Props,
   tabs: schema.maybe(tabsV8),
 });
@@ -212,32 +217,53 @@ const SCHEMA_DISCOVER_SESSION_TAB_VERSION_10 = SCHEMA_DISCOVER_SESSION_TAB_VERSI
   attributes: DISCOVER_SESSION_TAB_ATTRIBUTES_VERSION_10,
 });
 
-export const SCHEMA_SEARCH_MODEL_VERSION_10 = SCHEMA_SEARCH_MODEL_VERSION_8.extends({
+const SCHEMA_SEARCH_MODEL_VERSION_10 = SCHEMA_SEARCH_MODEL_VERSION_8.extends({
   tabs: schema.arrayOf(SCHEMA_DISCOVER_SESSION_TAB_VERSION_10, { minSize: 1 }),
 });
 
 const { tabs: tabsV10, ...restV10Props } = SCHEMA_SEARCH_MODEL_VERSION_10.getPropSchemas();
 
-export const SCHEMA_SEARCH_MODEL_VERSION_10_SO_API_WORKAROUND = schema.object({
+const SCHEMA_SEARCH_MODEL_VERSION_10_SO_API_WORKAROUND = schema.object({
   ...restV10Props,
   tabs: schema.maybe(tabsV10),
 });
 
-export const SCHEMA_SEARCH_MODEL_VERSION_11 = SCHEMA_SEARCH_MODEL_VERSION_10.extends({
+const SCHEMA_SEARCH_MODEL_VERSION_11 = SCHEMA_SEARCH_MODEL_VERSION_10.extends({
   chartInterval: schema.maybe(schema.string()),
 });
 
 const { tabs: tabsV11, ...restV11Props } = SCHEMA_SEARCH_MODEL_VERSION_11.getPropSchemas();
 
-export const SCHEMA_SEARCH_MODEL_VERSION_11_SO_API_WORKAROUND = schema.object({
+const SCHEMA_SEARCH_MODEL_VERSION_11_SO_API_WORKAROUND = schema.object({
   ...restV11Props,
   tabs: schema.maybe(tabsV11),
+});
+
+const DISCOVER_SESSION_TAB_ATTRIBUTES_VERSION_12 =
+  DISCOVER_SESSION_TAB_ATTRIBUTES_VERSION_10.extends({
+    hideTable: schema.boolean({ defaultValue: false }),
+  });
+
+const SCHEMA_DISCOVER_SESSION_TAB_VERSION_12 = SCHEMA_DISCOVER_SESSION_TAB_VERSION_10.extends({
+  attributes: DISCOVER_SESSION_TAB_ATTRIBUTES_VERSION_12,
+});
+
+const SCHEMA_SEARCH_MODEL_VERSION_12 = SCHEMA_SEARCH_MODEL_VERSION_11.extends({
+  hideTable: schema.maybe(schema.boolean({ defaultValue: false })),
+  tabs: schema.arrayOf(SCHEMA_DISCOVER_SESSION_TAB_VERSION_12, { minSize: 1, maxSize: 25 }),
+});
+
+const { tabs: tabsV12, ...restV12Props } = SCHEMA_SEARCH_MODEL_VERSION_12.getPropSchemas();
+
+export const SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND = schema.object({
+  ...restV12Props,
+  tabs: schema.maybe(tabsV12),
 });
 
 const LEGACY_MODEL_RETAINED_ATTRIBUTES = ['title', 'description', 'tabs'];
 
 export const LEGACY_MODEL_REMOVED_ATTRIBUTES = Object.keys(
-  SCHEMA_SEARCH_MODEL_VERSION_11_SO_API_WORKAROUND.getPropSchemas()
+  SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND.getPropSchemas()
 ).filter((key) => !LEGACY_MODEL_RETAINED_ATTRIBUTES.includes(key));
 
 export const LEGACY_MODEL_VERSIONS: SavedObjectsModelVersionMap = {
@@ -330,6 +356,16 @@ export const LEGACY_MODEL_VERSIONS: SavedObjectsModelVersionMap = {
         { unknowns: 'ignore' }
       ),
       create: SCHEMA_SEARCH_MODEL_VERSION_11_SO_API_WORKAROUND,
+    },
+  },
+  12: {
+    changes: [],
+    schemas: {
+      forwardCompatibility: SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND.extends(
+        {},
+        { unknowns: 'ignore' }
+      ),
+      create: SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND,
     },
   },
 };

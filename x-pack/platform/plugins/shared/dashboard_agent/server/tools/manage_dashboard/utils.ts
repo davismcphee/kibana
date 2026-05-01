@@ -8,16 +8,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { AttachmentStateManager } from '@kbn/agent-builder-server/attachments';
 import { AttachmentType } from '@kbn/agent-builder-common/attachments';
-import type {
-  AttachmentPanel,
-  DashboardAttachmentData,
-  LensAttachmentPanel,
-} from '@kbn/dashboard-agent-common';
-import { DASHBOARD_ATTACHMENT_TYPE } from '@kbn/dashboard-agent-common';
+import type { AttachmentPanel, DashboardAttachmentData } from '@kbn/dashboard-agent-common';
+import { DASHBOARD_ATTACHMENT_TYPE, isDashboardAttachment } from '@kbn/dashboard-agent-common';
 import type { Logger } from '@kbn/core/server';
 import { type AttachmentVersion, getLatestVersion } from '@kbn/agent-builder-common/attachments';
-import type { LensApiSchemaType } from '@kbn/lens-embeddable-utils';
 import { z } from '@kbn/zod/v4';
+import { LENS_EMBEDDABLE_TYPE } from '@kbn/lens-common';
 
 /**
  * Failure record for tracking visualization errors.
@@ -37,45 +33,23 @@ export const getErrorMessage = (error: unknown): string => {
 
 const visualizationAttachmentDataSchema = z.object({
   visualization: z.record(z.string(), z.unknown()),
-  query: z.string().optional(),
 });
-
-type ResolvedPanelWithoutGrid = Omit<LensAttachmentPanel, 'grid'>;
-
-const resolvePanelsFromVisualizationAttachment = (
-  data: unknown,
-  attachmentId: string
-): ResolvedPanelWithoutGrid[] => {
-  const parseResult = visualizationAttachmentDataSchema.safeParse(data);
-  if (!parseResult.success) {
-    throw new Error('Visualization attachment does not contain a valid visualization payload.');
-  }
-
-  const { visualization, query } = parseResult.data;
-  const title =
-    typeof visualization.title === 'string'
-      ? visualization.title
-      : query ?? 'Generated visualization';
-
-  return [
-    {
-      type: 'lens',
-      panelId: uuidv4(),
-      visualization: visualization as LensApiSchemaType,
-      title,
-      ...(query ? { query } : {}),
-      sourceAttachmentId: attachmentId,
-    },
-  ];
-};
 
 const resolvePanelsFromAttachment = (
   type: string,
-  data: unknown,
-  attachmentId: string
-): ResolvedPanelWithoutGrid[] => {
+  data: unknown
+): Pick<AttachmentPanel, 'type' | 'config'>[] => {
   if (type === AttachmentType.visualization) {
-    return resolvePanelsFromVisualizationAttachment(data, attachmentId);
+    const parseResult = visualizationAttachmentDataSchema.safeParse(data);
+    if (!parseResult.success) {
+      throw new Error('Visualization attachment does not contain a valid visualization payload.');
+    }
+    return [
+      {
+        type: LENS_EMBEDDABLE_TYPE,
+        config: parseResult.data.visualization,
+      },
+    ];
   }
 
   throw new Error(
@@ -115,12 +89,8 @@ export const resolvePanelsFromAttachments = ({
         throw new Error(`Attachment "${attachmentId}" does not have a readable version.`);
       }
 
-      const resolvedPanels = resolvePanelsFromAttachment(
-        attachmentRecord.type,
-        latestVersion.data,
-        attachmentId
-      );
-      panels.push(...resolvedPanels.map((panel) => ({ ...panel, grid })));
+      const resolvedPanels = resolvePanelsFromAttachment(attachmentRecord.type, latestVersion.data);
+      panels.push(...resolvedPanels.map((visContent) => ({ id: uuidv4(), ...visContent, grid })));
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       logger.error(
@@ -157,7 +127,7 @@ export const getRemovedPanels = (
   const panelsToKeep: AttachmentPanel[] = [];
 
   for (const panel of panels) {
-    if (removeSet.has(panel.panelId)) {
+    if (removeSet.has(panel.id)) {
       panelsToRemove.push(panel);
     } else {
       panelsToKeep.push(panel);
@@ -186,15 +156,13 @@ export const retrieveLatestVersion = (
     throw new Error(`Dashboard attachment "${attachmentId}" not found.`);
   }
 
-  if (attachment.type !== DASHBOARD_ATTACHMENT_TYPE) {
+  if (!isDashboardAttachment(attachment)) {
     throw new Error(
       `Attachment "${attachmentId}" is not a ${DASHBOARD_ATTACHMENT_TYPE} attachment.`
     );
   }
 
-  const latestVersion = getLatestVersion(
-    attachment
-  ) as unknown as AttachmentVersion<DashboardAttachmentData>;
+  const latestVersion = getLatestVersion(attachment);
   if (!latestVersion) {
     throw new Error(`Could not retrieve latest version of dashboard attachment "${attachmentId}".`);
   }

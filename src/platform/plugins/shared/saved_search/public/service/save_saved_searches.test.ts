@@ -28,6 +28,7 @@ describe('saveSavedSearch', () => {
     grid: {},
     hideAggregatedPreview: undefined,
     hideChart: false,
+    hideTable: false,
     isTextBasedQuery: false,
     kibanaSavedObjectMeta: { searchSourceJSON: '{}' },
     refreshInterval: undefined,

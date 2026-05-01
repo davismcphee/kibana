@@ -16,11 +16,11 @@ import type { TypeOf } from '@kbn/config-schema';
 import { i18n } from '@kbn/i18n';
 import { omit } from 'lodash';
 import type {
-  SCHEMA_SEARCH_MODEL_VERSION_11_SO_API_WORKAROUND,
+  SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND,
   SCHEMA_SEARCH_MODEL_VERSION_5,
   SCHEMA_SEARCH_MODEL_VERSION_6,
 } from '../../server/saved_objects/schema_legacy';
-import type { SCHEMA_DISCOVER_SESSION_V12 } from '../../server/saved_objects/schema';
+import type { SCHEMA_DISCOVER_SESSION_V13 } from '../../server/saved_objects/schema';
 
 export const extractTabsBackfillFnV6: SavedObjectModelDataBackfillFn<
   TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_5>,
@@ -30,11 +30,11 @@ export const extractTabsBackfillFnV6: SavedObjectModelDataBackfillFn<
   return { attributes };
 };
 
-export const extractTabsBackfillFnV12: SavedObjectModelDataBackfillFn<
-  TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_11_SO_API_WORKAROUND>,
-  TypeOf<typeof SCHEMA_DISCOVER_SESSION_V12>
+export const extractTabsBackfillFnV13: SavedObjectModelDataBackfillFn<
+  TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND>,
+  TypeOf<typeof SCHEMA_DISCOVER_SESSION_V13>
 > = (prevDoc) => {
-  let result: SavedObjectModelDataBackfillResult<TypeOf<typeof SCHEMA_DISCOVER_SESSION_V12>>;
+  let result: SavedObjectModelDataBackfillResult<TypeOf<typeof SCHEMA_DISCOVER_SESSION_V13>>;
 
   if (prevDoc.attributes.tabs) {
     const { title, description, tabs } = prevDoc.attributes;
@@ -59,7 +59,7 @@ const DEFAULT_TAB_UUID_NAMESPACE = '617f8ea7-754a-4a75-86bf-58c4b2f99690';
 export function extractTabs<
   T extends
     | TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_5>
-    | TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_11_SO_API_WORKAROUND>
+    | TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND>
 >(attributes: T, discoverSessionId?: string) {
   const { title, description, ...tabAttrs } = attributes;
   const id = discoverSessionId ? uuidv5(discoverSessionId, DEFAULT_TAB_UUID_NAMESPACE) : uuidv4();

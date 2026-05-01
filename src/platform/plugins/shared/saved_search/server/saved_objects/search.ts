@@ -13,7 +13,7 @@ import {
 } from '@kbn/core-saved-objects-server';
 import type { SavedObjectsType } from '@kbn/core/server';
 import type { MigrateFunctionsObject } from '@kbn/kibana-utils-plugin/common';
-import { extractTabsBackfillFnV12 } from '../../common/service/extract_tabs';
+import { extractTabsBackfillFnV13 } from '../../common/service/extract_tabs';
 import { getAllMigrations } from './search_migrations';
 import { SavedSearchTypeDisplayName } from '../../common/constants';
 import {
@@ -21,18 +21,18 @@ import {
   LEGACY_MODEL_VERSIONS,
   LEGACY_MODEL_REMOVED_ATTRIBUTES,
 } from './schema_legacy';
-import { SCHEMA_DISCOVER_SESSION_V12 } from './schema';
+import { SCHEMA_DISCOVER_SESSION_V13 } from './schema';
 
 export function getSavedSearchObjectType(
   getSearchSourceMigrations: () => MigrateFunctionsObject
 ): SavedObjectsType {
   const modelVersions: SavedObjectsModelVersionMap = {
     ...LEGACY_MODEL_VERSIONS,
-    12: {
+    13: {
       changes: [
         {
           type: 'data_backfill',
-          backfillFn: extractTabsBackfillFnV12,
+          backfillFn: extractTabsBackfillFnV13,
         },
         {
           type: 'data_removal',
@@ -40,8 +40,8 @@ export function getSavedSearchObjectType(
         },
       ],
       schemas: {
-        forwardCompatibility: SCHEMA_DISCOVER_SESSION_V12.extends({}, { unknowns: 'ignore' }),
-        create: SCHEMA_DISCOVER_SESSION_V12,
+        forwardCompatibility: SCHEMA_DISCOVER_SESSION_V13.extends({}, { unknowns: 'ignore' }),
+        create: SCHEMA_DISCOVER_SESSION_V13,
       },
     },
   };

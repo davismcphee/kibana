@@ -9,6 +9,7 @@
 
 import type { TypeOf } from '@kbn/config-schema';
 import { schema } from '@kbn/config-schema';
+import { DataGridDensity } from '@kbn/discover-utils';
 import {
   MIN_SAVED_SEARCH_SAMPLE_SIZE,
   MAX_SAVED_SEARCH_SAMPLE_SIZE,
@@ -27,7 +28,7 @@ import {
  * });
  *
  * export const SCHEMA_DISCOVER_SESSION_VNEXT = SCHEMA_DISCOVER_SESSION_VPREV.extends({
- *   tabs: schema.arrayOf(SCHEMA_TAB_VNEXT, { minSize: 1 }),
+ *   tabs: schema.arrayOf(SCHEMA_TAB_VNEXT, { minSize: 1, maxSize: 25 }),
  * });
  *
  * Make sure to also update the interfaces with the new schemas:
@@ -36,7 +37,11 @@ import {
  * export type DiscoverSessionTab = TypeOf<typeof SCHEMA_TAB_VNEXT>;
  */
 
-export const SCHEMA_TAB_ATTRIBUTES_V12 = schema.object({
+export const SCHEMA_TAB_ATTRIBUTES_V13 = schema.object({
+  // Layout
+  hideChart: schema.boolean({ defaultValue: false }),
+  hideTable: schema.boolean({ defaultValue: false }),
+
   // Data grid
   columns: schema.arrayOf(schema.string(), { defaultValue: [] }),
   sort: schema.oneOf(
@@ -69,11 +74,14 @@ export const SCHEMA_TAB_ATTRIBUTES_V12 = schema.object({
     })
   ),
   density: schema.maybe(
-    schema.oneOf([schema.literal('compact'), schema.literal('normal'), schema.literal('expanded')])
+    schema.oneOf([
+      schema.literal(DataGridDensity.COMPACT),
+      schema.literal(DataGridDensity.EXPANDED),
+      schema.literal(DataGridDensity.NORMAL),
+    ])
   ),
 
   // Chart
-  hideChart: schema.boolean({ defaultValue: false }),
   breakdownField: schema.maybe(schema.string()),
   visContext: schema.maybe(
     schema.oneOf([
@@ -129,23 +137,24 @@ export const SCHEMA_TAB_ATTRIBUTES_V12 = schema.object({
   ),
   hideAggregatedPreview: schema.maybe(schema.boolean()),
 
+  // TODO: Remove legacy props
   // Legacy
   hits: schema.maybe(schema.number()),
   version: schema.maybe(schema.number()),
 });
 
-const SCHEMA_TAB_V12 = schema.object({
+const SCHEMA_TAB_V13 = schema.object({
   id: schema.string(),
   label: schema.string(),
-  attributes: SCHEMA_TAB_ATTRIBUTES_V12,
+  attributes: SCHEMA_TAB_ATTRIBUTES_V13,
 });
 
-export const SCHEMA_DISCOVER_SESSION_V12 = schema.object({
+export const SCHEMA_DISCOVER_SESSION_V13 = schema.object({
   title: schema.string(),
   description: schema.string({ defaultValue: '' }),
-  tabs: schema.arrayOf(SCHEMA_TAB_V12, { minSize: 1 }),
+  tabs: schema.arrayOf(SCHEMA_TAB_V13, { minSize: 1, maxSize: 25 }),
 });
 
-export type DiscoverSessionTabAttributes = TypeOf<typeof SCHEMA_TAB_ATTRIBUTES_V12>;
-export type DiscoverSessionTab = TypeOf<typeof SCHEMA_TAB_V12>;
-export type DiscoverSessionAttributes = TypeOf<typeof SCHEMA_DISCOVER_SESSION_V12>;
+export type DiscoverSessionTabAttributes = TypeOf<typeof SCHEMA_TAB_ATTRIBUTES_V13>;
+export type DiscoverSessionTab = TypeOf<typeof SCHEMA_TAB_V13>;
+export type DiscoverSessionAttributes = TypeOf<typeof SCHEMA_DISCOVER_SESSION_V13>;
