@@ -136,11 +136,6 @@ export const SCHEMA_TAB_ATTRIBUTES_V13 = schema.object({
     ])
   ),
   hideAggregatedPreview: schema.maybe(schema.boolean()),
-
-  // TODO: Remove legacy props
-  // Legacy
-  hits: schema.maybe(schema.number()),
-  version: schema.maybe(schema.number()),
 });
 
 const SCHEMA_TAB_V13 = schema.object({
