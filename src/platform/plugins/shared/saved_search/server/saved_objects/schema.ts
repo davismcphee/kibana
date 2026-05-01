@@ -10,11 +10,14 @@
 import type { TypeOf } from '@kbn/config-schema';
 import { schema } from '@kbn/config-schema';
 import { DataGridDensity } from '@kbn/discover-utils';
+import type { SavedObjectsModelVersionMap } from '@kbn/core-saved-objects-server';
 import {
   MIN_SAVED_SEARCH_SAMPLE_SIZE,
   MAX_SAVED_SEARCH_SAMPLE_SIZE,
   VIEW_MODE,
 } from '../../common';
+import { extractTabsBackfillFnV13 } from '../../common/service/extract_tabs';
+import { LEGACY_MODEL_REMOVED_ATTRIBUTES } from './schema_legacy';
 
 /**
  * Follow this pattern to update the tab attributes schema in a non-breaking way:
@@ -31,13 +34,13 @@ import {
  *   tabs: schema.arrayOf(SCHEMA_TAB_VNEXT, { minSize: 1, maxSize: 25 }),
  * });
  *
- * Make sure to also update the interfaces with the new schemas:
+ * Also update SCHEMA_TAB_LATEST and SCHEMA_DISCOVER_SESSION_LATEST with the new schemas:
  *
- * export type DiscoverSessionTabAttributes = TypeOf<typeof SCHEMA_TAB_ATTRIBUTES_VNEXT>;
- * export type DiscoverSessionTab = TypeOf<typeof SCHEMA_TAB_VNEXT>;
+ * export const SCHEMA_TAB_LATEST = SCHEMA_TAB_VNEXT;
+ * export const SCHEMA_DISCOVER_SESSION_LATEST = SCHEMA_DISCOVER_SESSION_VNEXT;
  */
 
-export const SCHEMA_TAB_ATTRIBUTES_V13 = schema.object({
+const SCHEMA_TAB_ATTRIBUTES_V13 = schema.object({
   // Layout
   hideChart: schema.boolean({ defaultValue: false }),
   hideTable: schema.boolean({ defaultValue: false }),
@@ -150,6 +153,30 @@ export const SCHEMA_DISCOVER_SESSION_V13 = schema.object({
   tabs: schema.arrayOf(SCHEMA_TAB_V13, { minSize: 1, maxSize: 25 }),
 });
 
-export type DiscoverSessionTabAttributes = TypeOf<typeof SCHEMA_TAB_ATTRIBUTES_V13>;
-export type DiscoverSessionTab = TypeOf<typeof SCHEMA_TAB_V13>;
-export type DiscoverSessionAttributes = TypeOf<typeof SCHEMA_DISCOVER_SESSION_V13>;
+// Add new model versions here, which automatically registers them
+export const DISCOVER_SESSION_MODEL_VERSIONS: SavedObjectsModelVersionMap = {
+  13: {
+    changes: [
+      {
+        type: 'data_backfill',
+        backfillFn: extractTabsBackfillFnV13,
+      },
+      {
+        type: 'data_removal',
+        removedAttributePaths: LEGACY_MODEL_REMOVED_ATTRIBUTES,
+      },
+    ],
+    schemas: {
+      forwardCompatibility: SCHEMA_DISCOVER_SESSION_V13.extends({}, { unknowns: 'ignore' }),
+      create: SCHEMA_DISCOVER_SESSION_V13,
+    },
+  },
+};
+
+// Set constants to the latest schemas, which updates derived types and content management
+export const SCHEMA_TAB_LATEST = SCHEMA_TAB_V13;
+export const SCHEMA_DISCOVER_SESSION_LATEST = SCHEMA_DISCOVER_SESSION_V13;
+
+export type DiscoverSessionTabAttributes = TypeOf<typeof SCHEMA_TAB_LATEST>['attributes'];
+export type DiscoverSessionTab = TypeOf<typeof SCHEMA_TAB_LATEST>;
+export type DiscoverSessionAttributes = TypeOf<typeof SCHEMA_DISCOVER_SESSION_LATEST>;
