@@ -19,7 +19,7 @@ describe('saveSavedSearch', () => {
   let cmApi: ContentManagementPublicStart['client'];
   let savedSearch: SavedSearch;
 
-  const expectedTabAttributes = expect.objectContaining({
+  const expectedTabAttributes = {
     breakdownField: undefined,
     chartInterval: undefined,
     columns: [],
@@ -42,7 +42,19 @@ describe('saveSavedSearch', () => {
     usesAdHocDataView: undefined,
     viewMode: undefined,
     visContext: undefined,
-  });
+  };
+
+  const expectedData = {
+    title: 'title',
+    description: '',
+    tabs: [
+      {
+        id: expect.any(String),
+        label: 'Untitled',
+        attributes: expectedTabAttributes,
+      },
+    ],
+  };
 
   beforeEach(() => {
     cmApi = contentManagementMock.createStartContract().client;
@@ -143,17 +155,7 @@ describe('saveSavedSearch', () => {
 
     expect(cmApi.create).toHaveBeenCalledWith({
       contentTypeId: 'search',
-      data: expect.objectContaining({
-        title: 'title',
-        description: '',
-        tabs: [
-          {
-            id: expect.any(String),
-            label: 'Untitled',
-            attributes: expectedTabAttributes,
-          },
-        ],
-      }),
+      data: expectedData,
       options: { references: [] },
     });
   });
@@ -169,17 +171,7 @@ describe('saveSavedSearch', () => {
 
     expect(cmApi.update).toHaveBeenCalledWith({
       contentTypeId: 'search',
-      data: expect.objectContaining({
-        title: 'title',
-        description: '',
-        tabs: [
-          {
-            id: expect.any(String),
-            label: 'Untitled',
-            attributes: expectedTabAttributes,
-          },
-        ],
-      }),
+      data: expectedData,
       id: 'id',
       options: { references: [] },
     });
@@ -210,17 +202,7 @@ describe('saveSavedSearch', () => {
     );
     expect(cmApi.update).toHaveBeenCalledWith({
       contentTypeId: 'search',
-      data: expect.objectContaining({
-        title: 'title',
-        description: '',
-        tabs: [
-          {
-            id: expect.any(String),
-            label: 'Untitled',
-            attributes: expectedTabAttributes,
-          },
-        ],
-      }),
+      data: expectedData,
       id: 'id',
       options: { references: ['tag-1', 'tag-2'] },
     });
