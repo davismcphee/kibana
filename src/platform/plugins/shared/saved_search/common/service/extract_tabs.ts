@@ -37,7 +37,11 @@ export const extractTabsBackfillFnV13: SavedObjectModelDataBackfillFn<
   let result: SavedObjectModelDataBackfillResult<TypeOf<typeof SCHEMA_DISCOVER_SESSION_V13>>;
 
   if (prevDoc.attributes.tabs) {
-    const { title, description, tabs } = prevDoc.attributes;
+    const { title, description, tabs: originalTabs } = prevDoc.attributes;
+    const tabs = originalTabs.map(({ attributes: { hits, version, ...attributes }, ...tab }) => ({
+      ...tab,
+      attributes,
+    }));
     result = { attributes: { title, description, tabs } };
   } else {
     const { title, description, tabs } = extractTabs(prevDoc.attributes, prevDoc.id);
@@ -61,7 +65,7 @@ export function extractTabs<
     | TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_5>
     | TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND>
 >(attributes: T, discoverSessionId?: string) {
-  const { title, description, ...tabAttrs } = attributes;
+  const { title, description, hits, version, ...tabAttrs } = attributes;
   const id = discoverSessionId ? uuidv5(discoverSessionId, DEFAULT_TAB_UUID_NAMESPACE) : uuidv4();
   const tabs = [
     {

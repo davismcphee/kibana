@@ -96,6 +96,48 @@ describe('extractTabs', () => {
       `);
     });
 
+    it('should not extract hits and version into tab attributes', () => {
+      const attributes: TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_5> = {
+        kibanaSavedObjectMeta: {
+          searchSourceJSON:
+            '{"query":{"language":"kuery","query":"service.type: \\"elasticsearch\\""},"highlightAll":true,"fields":[{"field":"*","include_unmapped":true}],"sort":[{"@timestamp":{"order":"desc","format":"strict_date_optional_time"}},{"_doc":"desc"}],"filter":[{"meta":{"disabled":false,"negate":false,"alias":null,"key":"service.type","field":"service.type","params":{"query":"elasticsearch"},"type":"phrase","indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index"},"query":{"match_phrase":{"service.type":"elasticsearch"}},"$state":{"store":"appState"}}],"indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.index"}',
+        },
+        title: 'my_title',
+        sort: [['@timestamp', 'desc']],
+        columns: ['message'],
+        description: 'my description',
+        grid: {},
+        hideChart: false,
+        viewMode: VIEW_MODE.DOCUMENT_LEVEL,
+        isTextBasedQuery: false,
+        timeRestore: false,
+        hits: 5,
+        version: 2,
+      };
+
+      const result = extractTabs(attributes);
+
+      expect(result.tabs).toEqual([
+        {
+          id: 'mock-uuid',
+          label: 'Untitled',
+          attributes: {
+            kibanaSavedObjectMeta: {
+              searchSourceJSON:
+                '{"query":{"language":"kuery","query":"service.type: \\"elasticsearch\\""},"highlightAll":true,"fields":[{"field":"*","include_unmapped":true}],"sort":[{"@timestamp":{"order":"desc","format":"strict_date_optional_time"}},{"_doc":"desc"}],"filter":[{"meta":{"disabled":false,"negate":false,"alias":null,"key":"service.type","field":"service.type","params":{"query":"elasticsearch"},"type":"phrase","indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index"},"query":{"match_phrase":{"service.type":"elasticsearch"}},"$state":{"store":"appState"}}],"indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.index"}',
+            },
+            sort: [['@timestamp', 'desc']],
+            columns: ['message'],
+            grid: {},
+            hideChart: false,
+            viewMode: VIEW_MODE.DOCUMENT_LEVEL,
+            isTextBasedQuery: false,
+            timeRestore: false,
+          },
+        },
+      ]);
+    });
+
     it('should not extract `tabs` property in each tab', () => {
       const attributes = {
         kibanaSavedObjectMeta: {
@@ -230,7 +272,7 @@ describe('extractTabs', () => {
   });
 
   describe('extractTabsBackfillFnV13', () => {
-    it('should preserve existing tabs', () => {
+    it('should preserve existing tabs while removing hits and version from tab attributes', () => {
       const tabs = [
         {
           id: 'existing-id',
@@ -248,6 +290,8 @@ describe('extractTabs', () => {
             viewMode: VIEW_MODE.DOCUMENT_LEVEL,
             isTextBasedQuery: false,
             timeRestore: false,
+            hits: 5,
+            version: 2,
           },
         },
       ];
@@ -275,7 +319,26 @@ describe('extractTabs', () => {
         attributes: {
           title: 'my_title',
           description: 'my description',
-          tabs,
+          tabs: [
+            {
+              id: 'existing-id',
+              label: 'Existing Tab',
+              attributes: {
+                kibanaSavedObjectMeta: {
+                  searchSourceJSON:
+                    '{"query":{"language":"kuery","query":"service.type: \\"elasticsearch\\""},"highlightAll":true,"fields":[{"field":"*","include_unmapped":true}],"sort":[{"@timestamp":{"order":"desc","format":"strict_date_optional_time"}},{"_doc":"desc"}],"filter":[{"meta":{"disabled":false,"negate":false,"alias":null,"key":"service.type","field":"service.type","params":{"query":"elasticsearch"},"type":"phrase","indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index"},"query":{"match_phrase":{"service.type":"elasticsearch"}},"$state":{"store":"appState"}}],"indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.index"}',
+                },
+                columns: ['message'],
+                sort: [['@timestamp', 'desc']],
+                grid: {},
+                hideChart: false,
+                hideTable: false,
+                viewMode: VIEW_MODE.DOCUMENT_LEVEL,
+                isTextBasedQuery: false,
+                timeRestore: false,
+              },
+            },
+          ],
         },
       });
     });
