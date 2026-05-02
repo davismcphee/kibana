@@ -85,7 +85,7 @@ export const saveDiscoverSession = async (
 
   const tabReferences: SavedObjectReference[] = [];
 
-  const tabs = discoverSession.tabs.map((tab) => {
+  const tabs: DiscoverSessionAttributes['tabs'] = discoverSession.tabs.map((tab) => {
     const [serializedSearchSource, searchSourceReferences] = extractReferences(
       tab.serializedSearchSource,
       { refNamePrefix: `tab_${tab.id}` }
