@@ -42,6 +42,7 @@ export const typeVersionGuesser: SavedObjectTypeVersionGuesser = (document) => {
     }
   }
 
-  // Return the latest version if none of the schemas matched
+  // Preserve the pre-guesser fallback and return
+  // the latest version when no schema matches
   return modelVersionsArray[0].version;
 };

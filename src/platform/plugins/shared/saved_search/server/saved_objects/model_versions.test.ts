@@ -80,7 +80,7 @@ describe('model_versions', () => {
       expect(typeVersionGuesser(createDocument(attributes))).toBe(13);
     });
 
-    it('should return the latest version when no schema matches', () => {
+    it('should preserve the pre-guesser fallback by returning the latest version when no schema matches', () => {
       const document = createDocument({
         title: 'invalid document',
         description: '',
