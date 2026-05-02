@@ -14,6 +14,7 @@ import { MODEL_VERSIONS, typeVersionGuesser } from './model_versions';
 import type { SCHEMA_DISCOVER_SESSION_V13 } from './schema';
 import { DISCOVER_SESSION_MODEL_VERSIONS } from './schema';
 import type { SCHEMA_SEARCH_MODEL_VERSION_5 } from './schema_legacy';
+import type { SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND } from './schema_legacy';
 import { LEGACY_MODEL_VERSIONS } from './schema_legacy';
 
 const createDocument = <T>(attributes: T): SavedObjectUnsanitizedDoc<T> => ({
@@ -48,6 +49,44 @@ describe('model_versions', () => {
         viewMode: VIEW_MODE.DOCUMENT_LEVEL,
         isTextBasedQuery: false,
         timeRestore: false,
+      };
+
+      expect(typeVersionGuesser(createDocument(attributes))).toBe(12);
+    });
+
+    it('should return the legacy version for versionless v12 documents that already contain tabs', () => {
+      const attributes: TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND> = {
+        title: 'discover session',
+        description: '',
+        columns: [],
+        sort: [],
+        grid: {},
+        hideChart: false,
+        hideTable: false,
+        kibanaSavedObjectMeta: {
+          searchSourceJSON: '{}',
+        },
+        isTextBasedQuery: false,
+        timeRestore: false,
+        viewMode: VIEW_MODE.DOCUMENT_LEVEL,
+        tabs: [
+          {
+            id: 'tab-1',
+            label: 'Tab 1',
+            attributes: {
+              kibanaSavedObjectMeta: {
+                searchSourceJSON: '{}',
+              },
+              columns: [],
+              sort: [],
+              grid: {},
+              hideChart: false,
+              hideTable: false,
+              isTextBasedQuery: false,
+              timeRestore: false,
+            },
+          },
+        ],
       };
 
       expect(typeVersionGuesser(createDocument(attributes))).toBe(12);
