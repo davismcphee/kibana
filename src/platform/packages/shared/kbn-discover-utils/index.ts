@@ -57,6 +57,7 @@ export {
   getLogEventTypeFieldWithFallback,
   getLogExceptionTypeFieldWithFallback,
   getShouldShowFieldHandler,
+  isEsqlSavedSearch,
   isNestedFieldParent,
   usePager,
   calcFieldCounts,
@@ -91,7 +92,14 @@ export {
   HISTOGRAM_BREAKDOWN_FIELD_KEY,
 } from './src';
 
-export type { LogsContextService, ApmContextService, SortOrder, SortInput, SortPair } from './src';
+export type {
+  LogsContextService,
+  ApmContextService,
+  SortOrder,
+  SortInput,
+  SortPair,
+  DiscoverSessionFinderAttributes,
+} from './src';
 
 export * from './src/types';
 
