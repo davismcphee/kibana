@@ -6,13 +6,16 @@
  * your election, the "Elastic License 2.0", the "GNU Affero General Public
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
+import { buildModelVersionTransformFn } from '@kbn/core-saved-objects-base-server-internal';
 import type { SavedObjectModelTransformationContext } from '@kbn/core-saved-objects-server';
 import type { TypeOf } from '@kbn/config-schema';
+import { loggerMock } from '@kbn/logging-mocks';
 import type {
   SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND,
   SCHEMA_SEARCH_MODEL_VERSION_5,
 } from '../../server/saved_objects/schema_legacy';
-import { extractTabs, extractTabsBackfillFnV13, extractTabsBackfillFnV6 } from './extract_tabs';
+import { DISCOVER_SESSION_MODEL_VERSIONS } from '../../server/saved_objects/schema';
+import { extractTabs, extractTabsBackfillFnV6, extractTabsTransformFnV13 } from './extract_tabs';
 import { SavedSearchType, VIEW_MODE } from '..';
 
 jest.mock('uuid', () => ({
@@ -20,7 +23,11 @@ jest.mock('uuid', () => ({
   v4: jest.fn(() => 'mock-uuid'),
 }));
 
-const mockContext = {} as SavedObjectModelTransformationContext;
+const mockContext: SavedObjectModelTransformationContext = {
+  log: loggerMock.create(),
+  modelVersion: 13,
+  namespaceType: 'single',
+};
 
 describe('extractTabs', () => {
   describe('extractTabs', () => {
@@ -271,7 +278,7 @@ describe('extractTabs', () => {
     });
   });
 
-  describe('extractTabsBackfillFnV13', () => {
+  describe('extractTabsTransformFnV13', () => {
     it('should preserve existing tabs while removing hits and version from tab attributes', () => {
       const tabs = [
         {
@@ -315,30 +322,33 @@ describe('extractTabs', () => {
 
       const prevDoc = { id: 'discover-session-1', type: SavedSearchType, attributes };
 
-      expect(extractTabsBackfillFnV13(prevDoc, mockContext)).toEqual({
-        attributes: {
-          title: 'my_title',
-          description: 'my description',
-          tabs: [
-            {
-              id: 'existing-id',
-              label: 'Existing Tab',
-              attributes: {
-                kibanaSavedObjectMeta: {
-                  searchSourceJSON:
-                    '{"query":{"language":"kuery","query":"service.type: \\"elasticsearch\\""},"highlightAll":true,"fields":[{"field":"*","include_unmapped":true}],"sort":[{"@timestamp":{"order":"desc","format":"strict_date_optional_time"}},{"_doc":"desc"}],"filter":[{"meta":{"disabled":false,"negate":false,"alias":null,"key":"service.type","field":"service.type","params":{"query":"elasticsearch"},"type":"phrase","indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index"},"query":{"match_phrase":{"service.type":"elasticsearch"}},"$state":{"store":"appState"}}],"indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.index"}',
+      expect(extractTabsTransformFnV13(prevDoc, mockContext)).toEqual({
+        document: {
+          ...prevDoc,
+          attributes: {
+            title: 'my_title',
+            description: 'my description',
+            tabs: [
+              {
+                id: 'existing-id',
+                label: 'Existing Tab',
+                attributes: {
+                  kibanaSavedObjectMeta: {
+                    searchSourceJSON:
+                      '{"query":{"language":"kuery","query":"service.type: \\"elasticsearch\\""},"highlightAll":true,"fields":[{"field":"*","include_unmapped":true}],"sort":[{"@timestamp":{"order":"desc","format":"strict_date_optional_time"}},{"_doc":"desc"}],"filter":[{"meta":{"disabled":false,"negate":false,"alias":null,"key":"service.type","field":"service.type","params":{"query":"elasticsearch"},"type":"phrase","indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index"},"query":{"match_phrase":{"service.type":"elasticsearch"}},"$state":{"store":"appState"}}],"indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.index"}',
+                  },
+                  columns: ['message'],
+                  sort: [['@timestamp', 'desc']],
+                  grid: {},
+                  hideChart: false,
+                  hideTable: false,
+                  viewMode: VIEW_MODE.DOCUMENT_LEVEL,
+                  isTextBasedQuery: false,
+                  timeRestore: false,
                 },
-                columns: ['message'],
-                sort: [['@timestamp', 'desc']],
-                grid: {},
-                hideChart: false,
-                hideTable: false,
-                viewMode: VIEW_MODE.DOCUMENT_LEVEL,
-                isTextBasedQuery: false,
-                timeRestore: false,
               },
-            },
-          ],
+            ],
+          },
         },
       });
     });
@@ -362,30 +372,105 @@ describe('extractTabs', () => {
 
       const prevDoc = { id: 'discover-session-1', type: SavedSearchType, attributes };
 
-      expect(extractTabsBackfillFnV13(prevDoc, mockContext)).toEqual({
-        attributes: {
-          title: 'my_title',
-          description: 'my description',
-          tabs: [
-            {
-              id: '98c4f9c1-2bc8-5f64-9ee3-da83aa13f64e',
-              label: 'Untitled',
-              attributes: {
-                kibanaSavedObjectMeta: {
-                  searchSourceJSON:
-                    '{"query":{"language":"kuery","query":"service.type: \\"elasticsearch\\""},"highlightAll":true,"fields":[{"field":"*","include_unmapped":true}],"sort":[{"@timestamp":{"order":"desc","format":"strict_date_optional_time"}},{"_doc":"desc"}],"filter":[{"meta":{"disabled":false,"negate":false,"alias":null,"key":"service.type","field":"service.type","params":{"query":"elasticsearch"},"type":"phrase","indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index"},"query":{"match_phrase":{"service.type":"elasticsearch"}},"$state":{"store":"appState"}}],"indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.index"}',
+      expect(extractTabsTransformFnV13(prevDoc, mockContext)).toEqual({
+        document: {
+          ...prevDoc,
+          attributes: {
+            title: 'my_title',
+            description: 'my description',
+            tabs: [
+              {
+                id: '98c4f9c1-2bc8-5f64-9ee3-da83aa13f64e',
+                label: 'Untitled',
+                attributes: {
+                  kibanaSavedObjectMeta: {
+                    searchSourceJSON:
+                      '{"query":{"language":"kuery","query":"service.type: \\"elasticsearch\\""},"highlightAll":true,"fields":[{"field":"*","include_unmapped":true}],"sort":[{"@timestamp":{"order":"desc","format":"strict_date_optional_time"}},{"_doc":"desc"}],"filter":[{"meta":{"disabled":false,"negate":false,"alias":null,"key":"service.type","field":"service.type","params":{"query":"elasticsearch"},"type":"phrase","indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index"},"query":{"match_phrase":{"service.type":"elasticsearch"}},"$state":{"store":"appState"}}],"indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.index"}',
+                  },
+                  columns: ['message'],
+                  sort: [['@timestamp', 'desc']],
+                  grid: {},
+                  hideChart: false,
+                  viewMode: VIEW_MODE.DOCUMENT_LEVEL,
+                  isTextBasedQuery: false,
+                  timeRestore: false,
                 },
-                columns: ['message'],
-                sort: [['@timestamp', 'desc']],
-                grid: {},
-                hideChart: false,
-                viewMode: VIEW_MODE.DOCUMENT_LEVEL,
-                isTextBasedQuery: false,
-                timeRestore: false,
               },
-            },
-          ],
+            ],
+          },
         },
+      });
+    });
+
+    it('should drop hits and version after the full v13 transform pipeline', () => {
+      const tabs = [
+        {
+          id: 'existing-id',
+          label: 'Existing Tab',
+          attributes: {
+            kibanaSavedObjectMeta: {
+              searchSourceJSON:
+                '{"query":{"language":"kuery","query":"service.type: \\"elasticsearch\\""},"highlightAll":true,"fields":[{"field":"*","include_unmapped":true}],"sort":[{"@timestamp":{"order":"desc","format":"strict_date_optional_time"}},{"_doc":"desc"}],"filter":[{"meta":{"disabled":false,"negate":false,"alias":null,"key":"service.type","field":"service.type","params":{"query":"elasticsearch"},"type":"phrase","indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index"},"query":{"match_phrase":{"service.type":"elasticsearch"}},"$state":{"store":"appState"}}],"indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.index"}',
+            },
+            columns: ['message'],
+            sort: [['@timestamp', 'desc']],
+            grid: {},
+            hideChart: false,
+            hideTable: false,
+            viewMode: VIEW_MODE.DOCUMENT_LEVEL,
+            isTextBasedQuery: false,
+            timeRestore: false,
+            hits: 5,
+            version: 2,
+          },
+        },
+      ];
+
+      const attributes: TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND> = {
+        kibanaSavedObjectMeta: {
+          searchSourceJSON:
+            '{"query":{"language":"kuery","query":"service.type: \\"elasticsearch\\""},"highlightAll":true,"fields":[{"field":"*","include_unmapped":true}],"sort":[{"@timestamp":{"order":"desc","format":"strict_date_optional_time"}},{"_doc":"desc"}],"filter":[{"meta":{"disabled":false,"negate":false,"alias":null,"key":"service.type","field":"service.type","params":{"query":"elasticsearch"},"type":"phrase","indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index"},"query":{"match_phrase":{"service.type":"elasticsearch"}},"$state":{"store":"appState"}}],"indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.index"}',
+        },
+        title: 'my_title',
+        sort: [['@timestamp', 'desc']],
+        columns: ['message'],
+        description: 'my description',
+        grid: {},
+        hideChart: false,
+        viewMode: VIEW_MODE.DOCUMENT_LEVEL,
+        isTextBasedQuery: false,
+        timeRestore: false,
+        tabs,
+      };
+
+      const prevDoc = { id: 'discover-session-1', type: SavedSearchType, attributes };
+      const modelVersion13 = DISCOVER_SESSION_MODEL_VERSIONS[13]!;
+      const transform = buildModelVersionTransformFn(modelVersion13.changes);
+      const { document } = transform(prevDoc, mockContext);
+
+      expect(document.attributes).toEqual({
+        title: 'my_title',
+        description: 'my description',
+        tabs: [
+          {
+            id: 'existing-id',
+            label: 'Existing Tab',
+            attributes: {
+              kibanaSavedObjectMeta: {
+                searchSourceJSON:
+                  '{"query":{"language":"kuery","query":"service.type: \\"elasticsearch\\""},"highlightAll":true,"fields":[{"field":"*","include_unmapped":true}],"sort":[{"@timestamp":{"order":"desc","format":"strict_date_optional_time"}},{"_doc":"desc"}],"filter":[{"meta":{"disabled":false,"negate":false,"alias":null,"key":"service.type","field":"service.type","params":{"query":"elasticsearch"},"type":"phrase","indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index"},"query":{"match_phrase":{"service.type":"elasticsearch"}},"$state":{"store":"appState"}}],"indexRefName":"kibanaSavedObjectMeta.searchSourceJSON.index"}',
+              },
+              columns: ['message'],
+              sort: [['@timestamp', 'desc']],
+              grid: {},
+              hideChart: false,
+              hideTable: false,
+              viewMode: VIEW_MODE.DOCUMENT_LEVEL,
+              isTextBasedQuery: false,
+              timeRestore: false,
+            },
+          },
+        ],
       });
     });
   });

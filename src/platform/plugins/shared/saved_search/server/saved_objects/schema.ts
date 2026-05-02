@@ -16,7 +16,7 @@ import {
   MAX_SAVED_SEARCH_SAMPLE_SIZE,
   VIEW_MODE,
 } from '../../common';
-import { extractTabsBackfillFnV13 } from '../../common/service/extract_tabs';
+import { extractTabsTransformFnV13 } from '../../common/service/extract_tabs';
 import { LEGACY_MODEL_REMOVED_ATTRIBUTES } from './schema_legacy';
 
 /**
@@ -158,8 +158,8 @@ export const DISCOVER_SESSION_MODEL_VERSIONS: SavedObjectsModelVersionMap = {
   13: {
     changes: [
       {
-        type: 'data_backfill',
-        backfillFn: extractTabsBackfillFnV13,
+        type: 'unsafe_transform',
+        transformFn: (typeSafeGuard) => typeSafeGuard(extractTabsTransformFnV13),
       },
       {
         type: 'data_removal',

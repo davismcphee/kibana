@@ -10,7 +10,7 @@
 import { v4 as uuidv4, v5 as uuidv5 } from 'uuid';
 import type {
   SavedObjectModelDataBackfillFn,
-  SavedObjectModelDataBackfillResult,
+  SavedObjectModelUnsafeTransformFn,
 } from '@kbn/core-saved-objects-server';
 import type { TypeOf } from '@kbn/config-schema';
 import { i18n } from '@kbn/i18n';
@@ -30,25 +30,27 @@ export const extractTabsBackfillFnV6: SavedObjectModelDataBackfillFn<
   return { attributes };
 };
 
-export const extractTabsBackfillFnV13: SavedObjectModelDataBackfillFn<
+export const extractTabsTransformFnV13: SavedObjectModelUnsafeTransformFn<
   TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_12_SO_API_WORKAROUND>,
   TypeOf<typeof SCHEMA_DISCOVER_SESSION_V13>
 > = (prevDoc) => {
-  let result: SavedObjectModelDataBackfillResult<TypeOf<typeof SCHEMA_DISCOVER_SESSION_V13>>;
+  let attributes: TypeOf<typeof SCHEMA_DISCOVER_SESSION_V13>;
 
   if (prevDoc.attributes.tabs) {
     const { title, description, tabs: originalTabs } = prevDoc.attributes;
-    const tabs = originalTabs.map(({ attributes: { hits, version, ...attributes }, ...tab }) => ({
-      ...tab,
-      attributes,
-    }));
-    result = { attributes: { title, description, tabs } };
+    const tabs = originalTabs.map(
+      ({ attributes: { hits, version, ...tabAttributes }, ...tab }) => ({
+        ...tab,
+        attributes: tabAttributes,
+      })
+    );
+    attributes = { title, description, tabs };
   } else {
     const { title, description, tabs } = extractTabs(prevDoc.attributes, prevDoc.id);
-    result = { attributes: { title, description, tabs } };
+    attributes = { title, description, tabs };
   }
 
-  return result;
+  return { document: { ...prevDoc, attributes } };
 };
 
 // Don't change this, it's used to generate deterministic UUIDs for
