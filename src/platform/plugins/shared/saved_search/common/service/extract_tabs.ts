@@ -59,7 +59,7 @@ const DEFAULT_TAB_UUID_NAMESPACE = '617f8ea7-754a-4a75-86bf-58c4b2f99690';
 
 /**
  * Extract tab attributes into a separate array since multiple tabs are supported
- * @param attributes The previous attributes to be transformed (version 5)
+ * @param attributes The previous attributes to be transformed
  * @param discoverSessionId Optional Discover session ID used to generate a deterministic UUID for the default tab
  */
 export function extractTabs<

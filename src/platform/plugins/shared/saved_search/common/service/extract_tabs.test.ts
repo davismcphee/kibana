@@ -103,7 +103,7 @@ describe('extractTabs', () => {
       `);
     });
 
-    it('should not extract hits and version into tab attributes', () => {
+    it('should drop hits and version when extracting tab attributes', () => {
       const attributes: TypeOf<typeof SCHEMA_SEARCH_MODEL_VERSION_5> = {
         kibanaSavedObjectMeta: {
           searchSourceJSON:
