@@ -11,6 +11,7 @@ import type { UseEuiTheme } from '@elastic/eui';
 
 export const fontWeightDefinitions = (euiTheme: UseEuiTheme['euiTheme']) => ({
   bold: euiTheme.font.weight.bold,
+  semiBold: euiTheme.font.weight.semiBold,
   normal: euiTheme.font.weight.regular,
 });
 

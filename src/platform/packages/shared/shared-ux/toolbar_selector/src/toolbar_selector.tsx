@@ -36,6 +36,25 @@ export interface BaseToolbarProps {
   'data-selected-value'?: string | string[];
   buttonLabel: ReactElement | string;
   buttonTooltipContent?: ReactElement | string;
+  /**
+   * Visual style of the trigger button. Use `text` for an `EuiButtonEmpty`.
+   * @default 'empty'
+   */
+  buttonType?: 'primary' | 'empty' | 'text';
+  /**
+   * Removes padding on the given side(s) of the trigger button.
+   * Only applies when `buttonType` is `text`.
+   */
+  buttonFlush?: 'left' | 'right' | 'both';
+  /**
+   * Font weight of the trigger button label.
+   */
+  buttonFontWeight?: 'normal' | 'semiBold' | 'bold';
+  /**
+   * Size of the trigger button.
+   * @default 's'
+   */
+  buttonSize?: 'xs' | 's' | 'm';
   popoverContentBelowSearch?: ReactElement;
   popoverTitle?: string;
   options: SelectableEntry[];
@@ -44,6 +63,11 @@ export interface BaseToolbarProps {
   hasArrow?: boolean;
   disabled?: boolean;
   fullWidth?: boolean;
+  /**
+   * Whether to show selection checkmarks (and exclusion icons) in the options list.
+   * @default true
+   */
+  showOptionIcons?: boolean;
 }
 
 export interface ToolbarSingleSelectorProps {
@@ -64,6 +88,10 @@ export const ToolbarSelector = ({
   'data-selected-value': dataSelectedValue,
   buttonLabel,
   buttonTooltipContent,
+  buttonType = 'empty',
+  buttonFlush,
+  buttonFontWeight,
+  buttonSize = 's',
   popoverContentBelowSearch,
   popoverTitle,
   options,
@@ -74,6 +102,7 @@ export const ToolbarSelector = ({
   hasArrow = true,
   disabled = false,
   fullWidth = false,
+  showOptionIcons = true,
 }: ToolbarSelectorProps) => {
   const { euiTheme } = useEuiTheme();
   const popoverTitleId = useGeneratedHtmlId();
@@ -210,7 +239,10 @@ export const ToolbarSelector = ({
         button={
           <EuiToolTip content={buttonTooltipContent ?? popoverTitle} display="block">
             <ToolbarButton
-              size="s"
+              size={buttonSize}
+              type={buttonType}
+              flush={buttonFlush}
+              fontWeight={buttonFontWeight}
               data-test-subj={`${dataTestSubj}Button`}
               data-selected-value={dataSelectedValue}
               aria-label={popoverTitle}
@@ -243,6 +275,7 @@ export const ToolbarSelector = ({
             truncationProps: { truncation: 'middle' },
             isVirtualized: searchable,
             paddingSize: 's',
+            showIcons: showOptionIcons,
           }}
           {...(searchable
             ? {

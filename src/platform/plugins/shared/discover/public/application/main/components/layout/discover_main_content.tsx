@@ -7,9 +7,10 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-import { EuiFlexGroup, EuiFlexItem, EuiHorizontalRule } from '@elastic/eui';
+import { EuiFlexGroup, EuiFlexItem, EuiHorizontalRule, useEuiTheme } from '@elastic/eui';
 import { type DropType, DropOverlayWrapper, Droppable } from '@kbn/dom-drag-drop';
 import React, { useCallback, useState } from 'react';
+import { css } from '@emotion/react';
 import type { DataView } from '@kbn/data-views-plugin/common';
 import { METRIC_TYPE } from '@kbn/analytics';
 import { i18n } from '@kbn/i18n';
@@ -73,6 +74,7 @@ export const DiscoverMainContent = ({
   isChartAvailable,
 }: DiscoverMainContentProps) => {
   const { trackUiMetric } = useDiscoverServices();
+  const { euiTheme } = useEuiTheme();
   const dispatch = useInternalStateDispatch();
   const getState = useInternalStateGetState();
   const currentTabId = useCurrentTabSelector((tab) => tab.id);
@@ -180,7 +182,16 @@ export const DiscoverMainContent = ({
           ) : null}
           {viewMode === VIEW_MODE.AGGREGATED_LEVEL ? (
             <>
-              <EuiFlexItem grow={false}>{renderViewModeToggle()}</EuiFlexItem>
+              <EuiFlexItem
+                grow={false}
+                // Match unified data table toolbar padding used by Documents / Patterns
+                css={css`
+                  padding-block: ${euiTheme.size.xs};
+                  padding-inline: ${euiTheme.size.s};
+                `}
+              >
+                {renderViewModeToggle()}
+              </EuiFlexItem>
               <FieldStatisticsTab
                 dataView={dataView}
                 columns={columns}

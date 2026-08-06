@@ -79,9 +79,8 @@ describe('Document view mode toggle component', () => {
     await renderComponent();
 
     expect(screen.getByTestId('dscViewModeToggleButton')).toBeVisible();
+    expect(screen.getByTestId('dscViewModeToggleButton')).toHaveTextContent('Documents (10)');
     expect(screen.getByTestId('discoverQueryTotalHits')).toBeVisible();
-    expect(screen.getByTestId('dscViewModeToggleButton')).toHaveTextContent('Documents');
-    expect(screen.getByTestId('discoverQueryTotalHits')).toHaveTextContent('10 documents');
 
     openSelector();
 
@@ -110,6 +109,39 @@ describe('Document view mode toggle component', () => {
     expect(screen.getByTestId('discoverQueryTotalHits')).toBeVisible();
     expect(screen.getByTestId('discoverQueryHits')).toHaveTextContent('10');
     expect(screen.getByTestId('discoverQueryTotalHits')).toHaveTextContent('10 results');
+  });
+
+  it('should render the pattern count inside the selector button', async () => {
+    const services = createDiscoverServicesMock();
+    services.uiSettings.get = jest.fn().mockReturnValue(true);
+    services.aiops!.getPatternAnalysisAvailable = jest.fn().mockResolvedValue(jest.fn(() => true));
+
+    const dataView = buildDataViewMock({ name: 'logs-*' });
+    const toolkit = getDiscoverInternalStateMock({ services });
+    await toolkit.initializeTabs();
+    const { dataStateContainer } = await toolkit.initializeSingleTab({
+      tabId: toolkit.getCurrentTab().id,
+    });
+    dataStateContainer.data$.totalHits$.next({ fetchStatus: FetchStatus.COMPLETE, result: 10 });
+
+    renderWithKibanaRenderContext(
+      <DiscoverToolkitTestProvider toolkit={toolkit}>
+        <DocumentViewModeToggle
+          viewMode={VIEW_MODE.PATTERN_LEVEL}
+          isEsqlMode={false}
+          setDiscoverViewMode={jest.fn()}
+          dataView={dataView}
+          patternCount={3}
+        />
+      </DiscoverToolkitTestProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('dscViewModeToggleButton')).toBeVisible();
+    });
+
+    expect(screen.getByTestId('dscViewModeToggleButton')).toHaveTextContent('Patterns (3)');
+    expect(screen.getByTestId('dscViewModePatternCount')).toBeVisible();
   });
 
   it('should set the view mode to VIEW_MODE.DOCUMENT_LEVEL when the Documents option is clicked', async () => {

@@ -28,6 +28,15 @@ describe('<ToolbarButton />', () => {
       expect(component.render()).toMatchSnapshot();
     });
 
+    test('is rendered - text as EuiButtonEmpty', () => {
+      const component = mountWithIntl(
+        <ToolbarButton type="text" label="Documents" onClick={() => 'click'} />
+      );
+      expect(component.find('EuiButtonEmpty').exists()).toBe(true);
+      expect(component.find('EuiButtonEmpty').prop('color')).toBe('text');
+      expect(component.find('EuiButton').exists()).toBe(false);
+    });
+
     test('is rendered - text wth icon', () => {
       const component = mountWithIntl(
         <ToolbarButton

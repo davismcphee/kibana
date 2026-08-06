@@ -9,14 +9,14 @@
 
 import React from 'react';
 import type { IconType } from '@elastic/eui';
-import { EuiButton, EuiButtonIcon, useEuiTheme } from '@elastic/eui';
+import { EuiButton, EuiButtonEmpty, EuiButtonIcon, useEuiTheme } from '@elastic/eui';
 import type { EuiButtonPropsForButton } from '@elastic/eui/src/components/button/button';
 
 import { ToolbarButtonStyles, fontWeightDefinitions } from './toolbar_button.styles';
 
-type ToolbarButtonTypes = 'primary' | 'empty';
+type ToolbarButtonTypes = 'primary' | 'empty' | 'text';
 
-type ToolbarButtonFontWeights = 'normal' | 'bold';
+type ToolbarButtonFontWeights = 'normal' | 'semiBold' | 'bold';
 
 type ButtonPositions = 'left' | 'right' | 'center' | 'none';
 
@@ -60,6 +60,10 @@ type ToolbarStandardButton = Pick<EuiButtonPropsForButton, 'fullWidth' | 'isLoad
      * Determines prominence
      */
     fontWeight?: ToolbarButtonFontWeights;
+    /**
+     * Removes padding on the given side(s). Only applies when `type` is `text` (`EuiButtonEmpty`).
+     */
+    flush?: 'left' | 'right' | 'both';
   };
 
 type ToolbarIconButton = ToolbarButtonCommonProps & {
@@ -97,7 +101,7 @@ const computeToolbarButtonCommonCSSProps = (
       : {};
 
   const defaultStyles = {
-    ...(type === 'primary' ? {} : toolButtonStyles.default),
+    ...(type === 'primary' || type === 'text' ? {} : toolButtonStyles.default),
     ...groupPositionStyles,
   };
 
@@ -119,6 +123,7 @@ const ToolbarStandardButton = ({
   fullWidth,
   isDisabled,
   groupPosition,
+  flush,
   ...rest
 }: Omit<ToolbarStandardButton, 'as'>) => {
   const euiTheme = useEuiTheme();
@@ -134,18 +139,29 @@ const ToolbarStandardButton = ({
     : { color: 'text' };
 
   const icon = iconType ?? (hasArrow ? 'chevronSingleDown' : '');
+  const sharedButtonProps = {
+    size: rest.size,
+    isDisabled,
+    css: cssProps,
+    iconType: icon,
+    iconSide: iconType ? iconSide : ('right' as const),
+    ...toolbarButtonStyleProps,
+    ...rest,
+  };
+
+  if (type === 'text') {
+    return (
+      <EuiButtonEmpty {...sharedButtonProps} flush={flush}>
+        {label}
+      </EuiButtonEmpty>
+    );
+  }
 
   return (
     <EuiButton
-      size={rest.size}
-      isDisabled={isDisabled}
-      css={cssProps}
-      iconType={icon}
-      iconSide={iconType ? iconSide : 'right'}
       fullWidth={fullWidth}
       contentProps={fullWidth ? { style: { justifyContent: 'space-between' } } : {}}
-      {...toolbarButtonStyleProps}
-      {...rest}
+      {...sharedButtonProps}
     >
       {label}
     </EuiButton>

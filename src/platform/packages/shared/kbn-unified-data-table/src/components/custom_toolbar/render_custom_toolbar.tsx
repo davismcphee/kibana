@@ -193,7 +193,8 @@ export const getRenderCustomToolbarWithElements = ({
 export const styles = {
   toolbar: ({ euiTheme }: UseEuiTheme) =>
     css({
-      padding: `${euiTheme.size.s} ${euiTheme.size.s} ${euiTheme.size.xs}`,
+      paddingBlock: euiTheme.size.xs,
+      paddingInline: euiTheme.size.s,
     }),
   controlButton: ({ euiTheme }: UseEuiTheme) =>
     euiTheme
