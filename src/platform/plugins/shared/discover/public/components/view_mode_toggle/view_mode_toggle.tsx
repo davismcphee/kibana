@@ -10,6 +10,7 @@
 import type { ReactElement } from 'react';
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { EuiFlexGroup, EuiFlexItem, EuiLoadingSpinner } from '@elastic/eui';
+import { FormattedMessage } from '@kbn/i18n-react';
 import { i18n } from '@kbn/i18n';
 import { css } from '@emotion/react';
 import { SHOW_FIELD_STATISTICS } from '@kbn/discover-utils';
@@ -159,13 +160,6 @@ export const DocumentViewModeToggle = ({
     isEsqlMode,
   ]);
 
-  const buttonText =
-    viewMode === VIEW_MODE.PATTERN_LEVEL
-      ? patternsLabel
-      : viewMode === VIEW_MODE.AGGREGATED_LEVEL
-      ? fieldStatisticsLabel
-      : documentsLabel;
-
   const onChange = useCallback(
     (chosen?: SelectableEntry) => {
       if (chosen?.value) {
@@ -180,37 +174,42 @@ export const DocumentViewModeToggle = ({
   const showOnlyDocumentsCounter =
     showFieldStatisticsTab === false && showPatternAnalysisTab === false;
 
-  const countInButton = useMemo(() => {
+  // e.g. "10 documents", "3 patterns", "2 field statistics"
+  const buttonLabel = useMemo(() => {
     if (viewMode === VIEW_MODE.PATTERN_LEVEL) {
-      return patternCount === undefined ? (
-        <EuiLoadingSpinner size="m" />
-      ) : (
-        <span data-test-subj="dscViewModePatternCount">({patternCount})</span>
+      if (patternCount === undefined) {
+        return <EuiLoadingSpinner size="m" />;
+      }
+      return (
+        <span data-test-subj="dscViewModePatternCount">
+          <FormattedMessage
+            id="discover.viewModes.patternAnalysis.buttonLabel"
+            defaultMessage="{count} {count, plural, one {pattern} other {patterns}}"
+            values={{ count: patternCount }}
+          />
+        </span>
       );
     }
 
     if (viewMode === VIEW_MODE.AGGREGATED_LEVEL) {
-      return fieldsCount === undefined ? (
-        <EuiLoadingSpinner size="m" />
-      ) : (
-        <span data-test-subj="dscViewModeFieldsCount">({fieldsCount})</span>
+      if (fieldsCount === undefined) {
+        return <EuiLoadingSpinner size="m" />;
+      }
+      return (
+        <span data-test-subj="dscViewModeFieldsCount">
+          <FormattedMessage
+            id="discover.viewModes.fieldStatistics.buttonLabel"
+            defaultMessage="{count} field statistics"
+            values={{ count: fieldsCount }}
+          />
+        </span>
       );
     }
 
     return (
-      <HitsCounter
-        variant={hitsCounterVariant ?? (isEsqlMode ? 'results' : 'documents')}
-        format="parenthetical"
-      />
+      <HitsCounter variant={hitsCounterVariant ?? (isEsqlMode ? 'results' : 'documents')} />
     );
   }, [viewMode, patternCount, fieldsCount, isEsqlMode, hitsCounterVariant]);
-
-  // e.g. "Documents (4)", "Patterns (36)", "Field statistics (12)"
-  const buttonLabel = (
-    <>
-      {buttonText} {countInButton}
-    </>
-  );
 
   return (
     <EuiFlexGroup direction="row" gutterSize="s" alignItems="center" responsive={false}>

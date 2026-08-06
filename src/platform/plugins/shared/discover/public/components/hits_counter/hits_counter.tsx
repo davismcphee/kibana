@@ -21,11 +21,6 @@ export type HitsCounterVariant = 'documents' | 'results' | 'groups';
 export interface HitsCounterProps {
   variant: HitsCounterVariant;
   hitsTotalToDisplay?: number;
-  /**
-   * `label` (default) renders e.g. "10 documents".
-   * `parenthetical` renders e.g. "(10)" for embedding in another control's label.
-   */
-  format?: 'label' | 'parenthetical';
 }
 
 interface CountLabelValues {
@@ -91,11 +86,7 @@ const COUNT_LABELS: Record<
   },
 };
 
-export const HitsCounter: React.FC<HitsCounterProps> = ({
-  variant,
-  hitsTotalToDisplay,
-  format = 'label',
-}) => {
+export const HitsCounter: React.FC<HitsCounterProps> = ({ variant, hitsTotalToDisplay }) => {
   const dataStateContainer = useCurrentTabDataStateContainer();
   const totalHits$ = dataStateContainer.data$.totalHits$;
   const totalHitsState = useDataState(totalHits$);
@@ -125,39 +116,6 @@ export const HitsCounter: React.FC<HitsCounterProps> = ({
     hitsStatus === FetchStatus.PARTIAL || hitsStatus === FetchStatus.ERROR;
 
   const hitsTestSubj = showGreaterOrEqualSign ? 'discoverQueryHitsPartial' : 'discoverQueryHits';
-
-  // Compact form for embedding in another control, e.g. "Documents (4)"
-  if (format === 'parenthetical') {
-    return (
-      <span data-test-subj="discoverQueryTotalHits" aria-live="polite">
-        <span data-test-subj={hitsTestSubj}>
-          {showGreaterOrEqualSign ? '≥' : null}
-          {'('}
-          <FormattedNumber value={hitsTotal ?? 0} />
-          {')'}
-        </span>
-        {hitsStatus === FetchStatus.PARTIAL && (
-          <EuiLoadingSpinner
-            size="m"
-            aria-label={i18n.translate('discover.hitsCounter.hitCountSpinnerAriaLabel', {
-              defaultMessage: 'Final hit count still loading',
-            })}
-          />
-        )}
-        {hitsStatus === FetchStatus.ERROR && (
-          <EuiIconTip
-            type="warning"
-            color="warning"
-            size="s"
-            content={i18n.translate('discover.hitsCounter.hitCountWarningTooltip', {
-              defaultMessage: 'Results might be incomplete',
-            })}
-            iconProps={{ css: { display: 'inline-block', marginLeft: 4 } }}
-          />
-        )}
-      </span>
-    );
-  }
 
   const formattedHits = (
     <span data-test-subj={hitsTestSubj}>

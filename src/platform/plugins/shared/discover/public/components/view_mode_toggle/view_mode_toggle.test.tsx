@@ -79,7 +79,7 @@ describe('Document view mode toggle component', () => {
     await renderComponent();
 
     expect(screen.getByTestId('dscViewModeToggleButton')).toBeVisible();
-    expect(screen.getByTestId('dscViewModeToggleButton')).toHaveTextContent('Documents (10)');
+    expect(screen.getByTestId('dscViewModeToggleButton')).toHaveTextContent('10 documents');
     expect(screen.getByTestId('discoverQueryTotalHits')).toBeVisible();
 
     openSelector();
@@ -140,7 +140,7 @@ describe('Document view mode toggle component', () => {
       expect(screen.getByTestId('dscViewModeToggleButton')).toBeVisible();
     });
 
-    expect(screen.getByTestId('dscViewModeToggleButton')).toHaveTextContent('Patterns (3)');
+    expect(screen.getByTestId('dscViewModeToggleButton')).toHaveTextContent('3 patterns');
     expect(screen.getByTestId('dscViewModePatternCount')).toBeVisible();
   });
 
