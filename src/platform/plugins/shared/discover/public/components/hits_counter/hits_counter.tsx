@@ -115,10 +115,10 @@ export const HitsCounter: React.FC<HitsCounterProps> = ({ variant, hitsTotalToDi
   const showGreaterOrEqualSign =
     hitsStatus === FetchStatus.PARTIAL || hitsStatus === FetchStatus.ERROR;
 
+  const hitsTestSubj = showGreaterOrEqualSign ? 'discoverQueryHitsPartial' : 'discoverQueryHits';
+
   const formattedHits = (
-    <span
-      data-test-subj={showGreaterOrEqualSign ? 'discoverQueryHitsPartial' : 'discoverQueryHits'}
-    >
+    <span data-test-subj={hitsTestSubj}>
       <FormattedNumber value={hitsTotal ?? 0} />
     </span>
   );

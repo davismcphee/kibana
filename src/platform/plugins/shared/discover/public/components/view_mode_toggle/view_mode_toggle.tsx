@@ -9,14 +9,7 @@
 
 import type { ReactElement } from 'react';
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
-import {
-  EuiFlexGroup,
-  EuiFlexItem,
-  EuiIcon,
-  EuiLoadingSpinner,
-  EuiText,
-  useEuiTheme,
-} from '@elastic/eui';
+import { EuiFlexGroup, EuiFlexItem, EuiLoadingSpinner } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n-react';
 import { i18n } from '@kbn/i18n';
 import { css } from '@emotion/react';
@@ -57,7 +50,6 @@ export const DocumentViewModeToggle = ({
   hitsCounterVariant?: HitsCounterVariant;
   dataView: DataView;
 }) => {
-  const { euiTheme } = useEuiTheme();
   const {
     uiSettings,
     dataVisualizer: dataVisualizerService,
@@ -115,13 +107,6 @@ export const DocumentViewModeToggle = ({
     }
   }, [viewMode, isEsqlMode, setDiscoverViewMode]);
 
-  const includesNormalTabsStyle = viewMode === VIEW_MODE.AGGREGATED_LEVEL;
-
-  const containerPadding = includesNormalTabsStyle ? euiTheme.size.s : 0;
-  const containerCss = css`
-    padding: ${containerPadding} ${containerPadding} 0 ${containerPadding};
-  `;
-
   const documentsLabel = isEsqlMode
     ? i18n.translate('discover.viewModes.esql.label', { defaultMessage: 'Results' })
     : i18n.translate('discover.viewModes.document.label', { defaultMessage: 'Documents' });
@@ -138,7 +123,6 @@ export const DocumentViewModeToggle = ({
         key: VIEW_MODE.DOCUMENT_LEVEL,
         value: VIEW_MODE.DOCUMENT_LEVEL,
         label: documentsLabel,
-        prepend: <EuiIcon type="table" aria-hidden={true} />,
         checked: viewMode === VIEW_MODE.DOCUMENT_LEVEL ? 'on' : undefined,
         'data-test-subj': 'dscViewModeDocumentOption',
       },
@@ -149,7 +133,6 @@ export const DocumentViewModeToggle = ({
         key: VIEW_MODE.PATTERN_LEVEL,
         value: VIEW_MODE.PATTERN_LEVEL,
         label: patternsLabel,
-        prepend: <EuiIcon type="pattern" aria-hidden={true} />,
         checked: viewMode === VIEW_MODE.PATTERN_LEVEL ? 'on' : undefined,
         'data-test-subj': 'dscViewModePatternAnalysisOption',
       });
@@ -160,7 +143,6 @@ export const DocumentViewModeToggle = ({
         key: VIEW_MODE.AGGREGATED_LEVEL,
         value: VIEW_MODE.AGGREGATED_LEVEL,
         label: fieldStatisticsLabel,
-        prepend: <EuiIcon type="stats" aria-hidden={true} />,
         disabled: isEsqlMode,
         checked: viewMode === VIEW_MODE.AGGREGATED_LEVEL ? 'on' : undefined,
         'data-test-subj': 'dscViewModeFieldStatsOption',
@@ -178,22 +160,6 @@ export const DocumentViewModeToggle = ({
     isEsqlMode,
   ]);
 
-  const [buttonIcon, buttonText] =
-    viewMode === VIEW_MODE.PATTERN_LEVEL
-      ? ['pattern', patternsLabel]
-      : viewMode === VIEW_MODE.AGGREGATED_LEVEL
-      ? ['stats', fieldStatisticsLabel]
-      : ['tableDensityHigh', documentsLabel];
-
-  const buttonLabel = (
-    <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false}>
-      <EuiFlexItem grow={false}>
-        <EuiIcon type={buttonIcon} aria-hidden={true} />
-      </EuiFlexItem>
-      <EuiFlexItem>{buttonText}</EuiFlexItem>
-    </EuiFlexGroup>
-  );
-
   const onChange = useCallback(
     (chosen?: SelectableEntry) => {
       if (chosen?.value) {
@@ -203,55 +169,50 @@ export const DocumentViewModeToggle = ({
     [setDiscoverViewMode]
   );
 
-  const countDisplay = useMemo(() => {
-    if (viewMode === VIEW_MODE.PATTERN_LEVEL) {
-      return patternCount === undefined ? (
-        <EuiLoadingSpinner size="m" />
-      ) : (
-        <EuiText size="s" data-test-subj="dscViewModePatternCount">
-          <strong>
-            <FormattedMessage
-              id="discover.viewModes.patternAnalysis.countLabel"
-              defaultMessage="{count} {count, plural, one {pattern} other {patterns}}"
-              values={{ count: patternCount }}
-            />
-          </strong>
-        </EuiText>
-      );
-    }
-
-    if (viewMode === VIEW_MODE.AGGREGATED_LEVEL) {
-      return fieldsCount === undefined ? (
-        <EuiLoadingSpinner size="m" />
-      ) : (
-        <EuiText size="s" data-test-subj="dscViewModeFieldsCount">
-          <strong>
-            <FormattedMessage
-              id="discover.viewModes.fieldStatistics.countLabel"
-              defaultMessage="{count} {count, plural, one {field} other {fields}}"
-              values={{ count: fieldsCount }}
-            />
-          </strong>
-        </EuiText>
-      );
-    }
-
-    return <HitsCounter variant={hitsCounterVariant ?? (isEsqlMode ? 'results' : 'documents')} />;
-  }, [viewMode, patternCount, fieldsCount, isEsqlMode, hitsCounterVariant]);
-
   // if neither the pattern analysis nor field statistics view is available, there's only
   // one possible view (Documents/Results), so there's nothing to select between
   const showOnlyDocumentsCounter =
     showFieldStatisticsTab === false && showPatternAnalysisTab === false;
 
+  // e.g. "10 documents", "3 patterns", "2 field statistics"
+  const buttonLabel = useMemo(() => {
+    if (viewMode === VIEW_MODE.PATTERN_LEVEL) {
+      if (patternCount === undefined) {
+        return <EuiLoadingSpinner size="m" />;
+      }
+      return (
+        <span data-test-subj="dscViewModePatternCount">
+          <FormattedMessage
+            id="discover.viewModes.patternAnalysis.buttonLabel"
+            defaultMessage="{count} {count, plural, one {pattern} other {patterns}}"
+            values={{ count: patternCount }}
+          />
+        </span>
+      );
+    }
+
+    if (viewMode === VIEW_MODE.AGGREGATED_LEVEL) {
+      if (fieldsCount === undefined) {
+        return <EuiLoadingSpinner size="m" />;
+      }
+      return (
+        <span data-test-subj="dscViewModeFieldsCount">
+          <FormattedMessage
+            id="discover.viewModes.fieldStatistics.buttonLabel"
+            defaultMessage="{count} field statistics"
+            values={{ count: fieldsCount }}
+          />
+        </span>
+      );
+    }
+
+    return (
+      <HitsCounter variant={hitsCounterVariant ?? (isEsqlMode ? 'results' : 'documents')} />
+    );
+  }, [viewMode, patternCount, fieldsCount, isEsqlMode, hitsCounterVariant]);
+
   return (
-    <EuiFlexGroup
-      direction="row"
-      gutterSize="s"
-      alignItems="center"
-      responsive={false}
-      css={containerCss}
-    >
+    <EuiFlexGroup direction="row" gutterSize="s" alignItems="center" responsive={false}>
       {prepend && (
         <EuiFlexItem
           grow={false}
@@ -264,13 +225,24 @@ export const DocumentViewModeToggle = ({
           {prepend}
         </EuiFlexItem>
       )}
-      {!showOnlyDocumentsCounter && (
+      {showOnlyDocumentsCounter ? (
+        <EuiFlexItem grow={false}>
+          <HitsCounter
+            variant={hitsCounterVariant ?? (isEsqlMode ? 'results' : 'documents')}
+          />
+        </EuiFlexItem>
+      ) : (
         <EuiFlexItem grow={false}>
           <ToolbarSelector
             data-test-subj="dscViewModeToggle"
             data-selected-value={viewMode}
             searchable={false}
+            buttonType="text"
+            buttonFlush="left"
+            buttonFontWeight="semiBold"
+            buttonSize="s"
             buttonLabel={buttonLabel}
+            showOptionIcons={false}
             popoverTitle={i18n.translate('discover.viewModes.popoverTitle', {
               defaultMessage: 'Select view',
             })}
@@ -279,7 +251,6 @@ export const DocumentViewModeToggle = ({
           />
         </EuiFlexItem>
       )}
-      <EuiFlexItem grow={false}>{countDisplay}</EuiFlexItem>
     </EuiFlexGroup>
   );
 };
